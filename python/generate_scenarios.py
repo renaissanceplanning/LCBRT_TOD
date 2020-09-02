@@ -89,7 +89,7 @@ DERIVED INPUTS/SPECS:
 
 """
 
-#%% IMPORTS
+# %% IMPORTS
 import arcpy
 from suitability import generate_suitability
 from walksheds import generate_walksheds
@@ -100,13 +100,13 @@ from tod.HandyGP import extendTableDf
 import pandas as pd
 import numpy as np
 
-#%% WORKSPACES AND SCENARIO NAMES.
+# %% WORKSPACES AND SCENARIO NAMES.
 source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\LCBRT_data.gdb"
 scenarios_ws = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios_LAB"
 scenarios = ['WE_Sum', 'WE_Fair']
 arcpy.env.overwriteOutput = True
 
-#%% GLOBAL SETTINGS/SPECS
+# %% GLOBAL SETTINGS/SPECS
 USE_NET = False
 TECH = "BRT"
 
@@ -119,14 +119,19 @@ USES = RES + NRES + HOTEL
 
 # Suitability weightings
 weights = {
-    "in_DO": 0.6, 
-    "is_vacant": 0.15, 
-    "in_TOD": 0.05, 
+    "in_DO": 0.6,
+    "is_vacant": 0.15,
+    "in_TOD": 0.05,
     "in_walkshed": 0.1,
     "dev_size": 0.1
-    }
+}
 
-#%% HELPER FUNCTIONS AND CLASSES
+
+# %% HELPER FUNCTIONS AND CLASSES
+class LicenseError(Exception):
+    pass
+
+
 def genFieldList(suffix, include_untracked=True):
     """
     Generates a list of fields based on use groupings with the form:
@@ -139,7 +144,12 @@ def genFieldList(suffix, include_untracked=True):
     else:
         return ["{}_SF_{}".format(use, suffix) for use in USES if use not in UNTRACKED]
 
+
 def makeFieldRefDict(in_dict, suffix):
+    """
+    Generates a dictionary of field references the map category labels to output
+    fields based on use type (checked against USES in the analysis).
+    """
     global USES
     out_dict = {}
     for k in in_dict:
@@ -147,25 +157,23 @@ def makeFieldRefDict(in_dict, suffix):
         if v not in USES:
             raise ValueError("Invalid use grouping specified for key '{}'".format(k))
         out_dict[k] = "{}_SF_{}".format(v, suffix)
-
-class LicenseError(Exception):
-    pass
+    return out_dict
 
 
-#%% INPUT DATA SETS
+# %% INPUT DATA SETS
 # Parcels
 parcels = "parcels"
 id_field = "ParclID"
 lu_field = "LandUse"
 par_est_fld_ref = {
     "Commercial/Retail": "Ret",
-    "Industrial/Manufacturing": "Ind", 
+    "Industrial/Manufacturing": "Ind",
     "Institutional": "Off",
     "Multifamily": "MF",
     "Office": "Off",
-    "Single-family": "SF", 
+    "Single-family": "SF",
     "Hospitality": "Hot"
-} #lu_field_ref
+}  # lu_field_ref
 par_sqft_field = "BldSqFt"
 is_do_field = "DO_Site"
 do_prop_field = "DOSProp"
@@ -175,31 +183,31 @@ pipe_field = "in_pipe"
 excl_lu = ["Recreation/Cultural", "Single-family", "Transportation", "Utilities"]
 
 # New/pipeline features
-newpipe_fc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\SBF_New_Pipe_Merged_Parcel_SJ.shp" #TODO: add to source_gdb?
-newpipe_par_field = r"ParclID"
+newpipe_fc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\SBF_New_Pipe_Merged_Parcel_SJ.shp"  # TODO: add to source_gdb?
+newpipe_par_field = "ParclID"
 newpipe_sqft = "RBA"
 newpipe_lu = "PropertyTy"
 new_dev_fld_ref = {
     "Flex New": "Ind",
     "Hospitality New": "Hot",
     "Industrial New": "Ind",
-    "Multi-Family New":  "MF",
+    "Multi-Family New": "MF",
     "Office New": "Off",
     "Retail (Power Center) New": "Ret",
     "Retail New": "Ret",
     "Student New": "Oth"
-    }
+}
 pipe_fld_ref = {
     "Flex Pipeline": "Ind",
-    "Health Care Pipeline": "Oth", 
-    "Hospitality Pipeline": "Hot", 
-    "Industrial Pipeline": "Ind", 
+    "Health Care Pipeline": "Oth",
+    "Hospitality Pipeline": "Hot",
+    "Industrial Pipeline": "Ind",
     "Multi-Family Pipeline": "MF",
-    "Office Pipeline": "Off", 
-    "Retail Pipeline": "Ret", 
-    "Specialty Pipeline": "Oth", 
+    "Office Pipeline": "Off",
+    "Retail Pipeline": "Ret",
+    "Specialty Pipeline": "Oth",
     "Student Pipeline": "Oth"
-    }
+}
 new_dev_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + "LIKE '%New'"
 pipe_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + "LIKE '%Pipeline'"
 
@@ -212,17 +220,15 @@ walk_net = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\LCBRT_data.gd
 imp_field = "Length"
 cost = "1320"
 
-#%% DERIVED INPUTS/SPECS
-par_est_fields = genFieldList("Par") #par_fields, par_fields_u
-new_dev_fields = genFieldList("New") #new_dev_fields, new_dev_fields_u
-ex_lu_fields  = genFieldList("Ex") #ex_lu_fields, ex_lu_fields_u
-pipe_fields = genFieldList("Pipe") #pipe_fields, pipe_fields_u
+# %% DERIVED INPUTS/SPECS
+par_est_fields = genFieldList("Par")  # par_fields, par_fields_u
+new_dev_fields = genFieldList("New")  # new_dev_fields, new_dev_fields_u
+ex_lu_fields = genFieldList("Ex")  # ex_lu_fields, ex_lu_fields_u
+pipe_fields = genFieldList("Pipe")  # pipe_fields, pipe_fields_u
+# out_gdb = r"D:\Users\DE7\Documents\temp\TOD_TestRun\TOD_TEST_CR.gdb"
 
 
-#out_gdb = r"D:\Users\DE7\Documents\temp\TOD_TestRun\TOD_TEST_CR.gdb"
-
-
-#%% PROCESS
+# %% PROCESS
 try:
     if arcpy.CheckExtension("Network") == "Available":
         arcpy.CheckOutExtension("Network")
@@ -241,16 +247,16 @@ try:
         scen_gdb = path.join(scen_ws, "{}_scenario.gdb".format(scenario))
         if not arcpy.Exists(scen_ws):
             arcpy.CreateFolder_management(out_folder_path=scenarios_ws, out_name=scenario)
-        
+
         # Drop scenario gdb for a clean run
         #  (NumPyArrayToTable cannot overwrite existing tables)
         if arcpy.Exists(scen_gdb):
             print "Deleting existing scenario db for new run..."
             arcpy.Delete_management(scen_gdb)
-        
+
         # Creat the scenario gdb
         print "Creating scenario gdb..."
-        scen_gdb = createTODTemplatesGDB(in_folder=scen_ws, 
+        scen_gdb = createTODTemplatesGDB(in_folder=scen_ws,
                                          gdb_name="{}_scenario.gdb".format(scenario),
                                          sr=scenarios_sr)
 
@@ -266,9 +272,9 @@ try:
                 type_emb_arr = np.array(np.rec.fromrecords(recList=type_emb.values,
                                                            names=type_emb.dtypes.index.tolist()))
                 # Add embellishsments
-                arcpy.da.ExtendTable(in_table=st_type_tbl, 
+                arcpy.da.ExtendTable(in_table=st_type_tbl,
                                      table_match_field='stn_type',
-                                     in_array=type_emb_arr, 
+                                     in_array=type_emb_arr,
                                      array_match_field="stn_type")
 
         # Import scenario stations into the new GDB
@@ -279,70 +285,73 @@ try:
                                                         where_clause=stations_wc)
 
         # Assume stations source has the template fields already populated (stn_type, stn_name, stn_order)
-        arcpy.Append_management(inputs=stations_fl, 
+        arcpy.Append_management(inputs=stations_fl,
                                 target=path.join(scen_gdb, 'stations'),
                                 schema_type='NO_TEST')
         ''' TODO: modify TOD.py to generate customized tables 
             (ie _todTemplatesFromConfig() ...insert csv as templates for stn_types and gradients)
             existing strategy is to modify the defaults to fit LCRT needs
-        '''        
+        '''
         # Build walkshed for suitability calculations
         print "Generating walksheds..."
         walk_shed = generate_walksheds(stations=stations,
                                        walk_net=walk_net,
                                        imp_field=imp_field,
-                                       cost=cost, 
-                                       out_gdb=scen_gdb, 
+                                       cost=cost,
+                                       out_gdb=scen_gdb,
                                        stations_wc=None)
 
         # generate suitability table and tack on the tot_suit to parcel data
         print "Evaluating suitability..."
-        suit_fc, suit_table = generate_suitability(in_suit_fc=parcels, 
+        suit_fc, suit_table = generate_suitability(in_suit_fc=parcels,
                                                    id_field=id_field,
-                                                   is_do_field=is_do_field, 
+                                                   is_do_field=is_do_field,
                                                    do_prop_field=do_prop_field,
-                                                   acres_field=acres_field, 
+                                                   acres_field=acres_field,
                                                    seg_id_field=seg_id_field,
-                                                   lu_field=lu_field, 
+                                                   lu_field=lu_field,
                                                    pipe_field=pipe_field,
-                                                   stations=stations_fl, 
+                                                   stations=stations_fl,
                                                    station_buffers=walk_shed,
                                                    weights=weights,
                                                    out_gdb=scen_gdb,
-                                                   excl_lu=excl_lu, 
+                                                   excl_lu=excl_lu,
                                                    stations_wc=None)
-        
+
         # Estimate existing, pipeline development
         #  -- Parcel-based estimates
         print "Appending existing activity data to parcel features based on parcel attributes"
-        sqFtByLu(in_fc=suit_fc, 
-                 sqft_field=par_sqft_field, 
-                 lu_field=lu_field, 
-                 lu_field_ref=lu_field_ref,
+        _par_est_fld_ref = makeFieldRefDict(par_est_fld_ref, "Par")
+        sqFtByLu(in_fc=suit_fc,
+                 sqft_field=par_sqft_field,
+                 lu_field=lu_field,
+                 lu_field_ref=_par_est_fld_ref,
                  where_clause=None)
 
         # -- From New Dev features
         print "...Estimating new activity"
         newpipe = arcpy.FeatureClassToFeatureClass_conversion(newpipe_fc, scen_gdb, "newpipe")
-        sqFtByLu(in_fc=newpipe, 
-                 sqft_field=newpipe_sqft, 
-                 lu_field=newpipe_lu, 
-                 lu_field_ref=new_dev_fld_ref, 
+        _new_dev_fld_ref = makeFieldRefDict(new_dev_fld_ref, "New")
+        sqFtByLu(in_fc=newpipe,
+                 sqft_field=newpipe_sqft,
+                 lu_field=newpipe_lu,
+                 lu_field_ref=_new_dev_fld_ref,
                  where_clause=new_dev_wc)
-        
+
         # -- Pipeline dev
         print "...Estimating pipeline development"
-        sqFtByLu(in_fc=newpipe, 
-                 sqft_field=newpipe_sqft, 
+        _pipe_fld_ref = makeFieldRefDict(pipe_fld_ref, "Pipe")
+        sqFtByLu(in_fc=newpipe,
+                 sqft_field=newpipe_sqft,
                  lu_field=newpipe_lu,
-                 lu_field_ref=pipe_fld_ref, 
+                 lu_field_ref=_pipe_fld_ref,
                  where_clause=pipe_wc)
 
         # -- Sum to parcels
-        print "...Summarizing new and pipeline data to parcel level" 
-        new_dev_fields_u = sorted({f for f in new_dev_fields})       
-        pipe_fields_u = sorted({f for f in pipe_fields})
-        newpipe_fields = [newpipe_par_field] + new_dev_fields_u + pipe_fields_u
+        print "...Summarizing new and pipeline data to parcel level"
+        # new_dev_fields_u = sorted({f for f in new_dev_fields})
+        # pipe_fields_u = sorted({f for f in pipe_fields})
+        newpipe_fields = [newpipe_par_field] + new_dev_fields + pipe_fields
         newpipe_df = pd.DataFrame(arcpy.da.TableToNumPyArray(newpipe, newpipe_fields))
         newpipe_sum = newpipe_df.groupby(newpipe_par_field).sum()
         # -- Extend table
@@ -353,12 +362,12 @@ try:
 
         # -- Calculate fields
         print "...Calculating existing (parcel-based + new development)"
-        for ex_lu_field in ex_lu_fields:            
+        for ex_lu_field in ex_lu_fields:
             par_field = ex_lu_field.replace("Ex", "Par")
             new_dev_field = ex_lu_field.replace("Ex", "New")
             arcpy.AddField_management(suit_fc, ex_lu_field, "LONG")
             with arcpy.da.UpdateCursor(suit_fc, [par_field, new_dev_field, ex_lu_field]) as c:
-                for r in c:                    
+                for r in c:
                     par_val, new_dev_val, ex_lu_val = r
                     if new_dev_val:
                         r[-1] = new_dev_val
@@ -417,8 +426,8 @@ try:
         parcels_df = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
                 in_table=suit_fc, field_names=append_fields, null_value=0.0
-                )
             )
+        )
         extendTableDf(in_table=dev_area_tbl, table_match_field=id_field,
                       df=parcels_df, df_match_field=id_field, append_only=False)
 
@@ -452,8 +461,8 @@ try:
                                       target_fields=tgt_sf_fields, out_fields=out_fields, out_table=adj_tgt_tbl,
                                       where_clause=None)
 
-        #TODO:  Blend TOD results with baseline parcel expected LU, mean FAR
-        
+        # TODO:  Blend TOD results with baseline parcel expected LU, mean FAR
+
 
 except LicenseError:
     arcpy.AddWarning("Network Analyst not available to genreate walksheds")
