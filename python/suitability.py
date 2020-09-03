@@ -154,9 +154,21 @@ def generate_suitability(
     df["pipe_include"] = np.select([df[pipe_field] == 1], [0.0], 1.0)
 
     # Calc total suit removing parcels deemed ineligible by LU and Pipeline dev
-    df["tot_suit"] = (
-        df[[is_do_field, "lu_include", "pipe_include"]].max(axis=1) * df.raw_suit
-    )
+    # The parcel has no pipeline dev AND (is either a DO site OR a LU that could develop)
+    _include_ = np.logical_and(
+        df["pipe_include"] == 1,
+        np.logical_or(
+            df[is_do_field] == 1,
+            df["lu_include"] == 1
+        )
+    )   
+    df["full_include"] = np.select([_include_], [1.0], 0.0)
+    df["tot_suit"] = df.raw_suit * df.full_include
+    # df["tot_suit"] = (
+    #     #df[[is_do_field, "lu_include", "pipe_include"]].max(axis=1) * df.raw_suit
+        
+    #     df[["lu_include", "pipe_include"]].min(axis=1) * df.raw_suit
+    # )
 
     # dump suit table to gdb ##NOTE: this will fail on rerun as the NumPyArrayToTable cant overwrite existing tbl
     suit_tbl = path.join(out_gdb, "suitability")

@@ -8,7 +8,7 @@ lu_cats = [
     "Multifamily",
     "Office",
     "Single-family"
-    ]
+]
 
 # List of fields to which square footage (SF) will be assigned
 #  - corresponds to lu_cats for dict creation below
@@ -19,7 +19,7 @@ lu_fields = [
     "MF_SF_Ex",
     "Off_SF_Ex",
     "SF_SF_Ex"
-    ]
+]
 lu_field_ref = dict(zip(lu_cats, lu_fields))
 
 
@@ -61,9 +61,8 @@ def sqFtByLu_existing(parcel_fc, sqft_field, lu_field, lu_field_ref):
                 update_idx = update_fields.index(update_field)
                 r[update_idx] = bldg_area
                 c.updateRow(r)
-                
 
-    
+
 def sqFtByLu(in_fc, sqft_field, lu_field, lu_field_ref, where_clause=None):
     """
     in_fc: String (path to feature class)
@@ -100,6 +99,4 @@ def sqFtByLu(in_fc, sqft_field, lu_field, lu_field_ref, where_clause=None):
             if update_field:
                 update_idx = update_fields.index(update_field)
                 r[update_idx] = bldg_area
-                c.updateRow(r)           
-
-
+                c.updateRow(r)

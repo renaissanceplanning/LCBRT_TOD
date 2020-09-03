@@ -1,4 +1,10 @@
 """
+#TODO: clean up all data inputs for an authoritative source gdb
+#TODO: handle segment-level control totals and document vars here
+#TODO: add fields to report total floor area for each parcel for each time frame
+#TODO: report FAR, units per acre, lu mix by station area, segment (this might be just as easily done in a dashboard)
+#TODO: station area typology spreadsheet ingestion tool (might be a separate tool?)
+
 Generate a TOD scenario based on workspace details, analysis specs, standard input 
 data, and derived inputs/specs:
 
@@ -14,6 +20,8 @@ ANALYSIS SPECS:
          on walksheds; if False, TOD templates will be applied for station areas defined
          based on simple, non-overlapping buffers.
       - `TECH`: Station types may change based on selected tech (for LCRT always use `BRT`)
+      - `SHARE_THRESHOLD`: The proportion of a parcel feature that needs to overlap a 
+         TOD station area polygon to be considered "within" the station area.
 
   - Use groupings (support consistent field naming and references by use category)
       - `RES`: residential use groupings
@@ -76,17 +84,51 @@ STANDARD INPUTS:
      These include specification of activity shares by use groupings for each TOD type
      and floor-area-per-unit assumptions.
     
-  - `walk_net`: The network dataset to be used when creating station area walksheds.
+  - `walk_net`: The network dataset to be used when creating station area walksheds and
+     defining TOD station areas (if `USE_NET` is True).
       - `imp_field`: The impedance attribute of `walk_net` to use when creating walkshed
          service areas.
-      - `cost`: The size of the walkshed service area in the same units used for `imp_field`.
-         Unit details are recorded in the network dataset's Properties dialog.
+      - `cost`: The size of the walkshed service area in the same units used for 
+         `imp_field`. Unit details are recorded in the network dataset's Properties 
+         dialog.
+      - `restrictions`: Restriction attributes in `walk_net` to honor when defining 
+         station areas. To ignore restrictions, set this variable to `None`.
 
 DERIVED INPUTS/SPECS:
-  - `_ex_lu_fields`: a list of strings that will be added to `parcels` as an estimate
-    of total existing floor area based on parcel-based floor area estimtes (``)
-    and floor area estimated for recently delivered developments (`new_dev_fields`)
+  - `par_est_fields`: a list of fields that will be added to `parcels` as an estimate
+    of total existing floor area based on parcel attributes alone.
+  - `new_dev_fields`: a list of fields that will be added to `parcels` as an estimate
+    of recently-delivered floor area.
+  - `ex_lu_fields`: a list of fields that will be added to `parcels` as an estimate
+    of total existing floor area based on parcel-based floor area estimtes 
+    (`par_est_fields`) and floor area estimated for recently delivered developments 
+    (`new_dev_fields`)
+  - `pipe_fields`: a list of fields that will be added to `parcels` as an estimate
+    of commited floor area in the pipeline.
 
+
+The key steps in the scenario generation process are outlined below:
+  - Create the output scenario workspace
+  - Iterate over scenarios
+      - Delete existing gdb if present
+      - Create a fresh analysis gdb
+      - Add station type embellishments from csv
+      - Import stations from source gdb to scenario gdb
+      - Generate station walksheds
+      - Evaluate parcel suitability for this scenario
+      - Add existing (parcel based, new dev) and pipeline floor area estimates to 
+        scenario parcels
+      - Apply TOD templates for basic parcel build-out target setting
+      - Convert parcel activity targets to floor area targets
+         - Fetch station associated with each parcel
+         - Fetch station type for this scenario
+         - Proportion RES, JOB, HOTEL target into sub uses based on use groupings
+            TODO: make this a little smarter by using the USES global lists?
+         - Apply floor area assumptions
+      - Adjust build-out targets for each parcel based on existing + pipeline floor area
+      - TODO: Blend TOD build out capacity with non-TOD build-out capacity
+      - TODO: Subtract existing floor area from build-out capacity to estimate change capacity
+      - TODO: Run allocation by segment
 """
 
 # %% IMPORTS
@@ -109,13 +151,14 @@ arcpy.env.overwriteOutput = True
 # %% GLOBAL SETTINGS/SPECS
 USE_NET = False
 TECH = "BRT"
+SHARE_THRESHOLD = 0.5
 
 # Use groupings
 RES = ["SF", "MF"]
 NRES = ["Ret", "Ind", "Off"]
 HOTEL = ["Hot"]
 UNTRACKED = ["Oth"]
-USES = RES + NRES + HOTEL
+USES = RES + NRES + HOTEL + UNTRACKED
 
 # Suitability weightings
 weights = {
@@ -156,6 +199,7 @@ def makeFieldRefDict(in_dict, suffix):
         v = in_dict[k]
         if v not in USES:
             raise ValueError("Invalid use grouping specified for key '{}'".format(k))
+            # TODO: smarter error
         out_dict[k] = "{}_SF_{}".format(v, suffix)
     return out_dict
 
@@ -172,8 +216,9 @@ par_est_fld_ref = {
     "Multifamily": "MF",
     "Office": "Off",
     "Single-family": "SF",
-    "Hospitality": "Hot"
-}  # lu_field_ref
+    "Hospitality": "Hot",
+    "Other": "Oth"
+}
 par_sqft_field = "BldSqFt"
 is_do_field = "DO_Site"
 do_prop_field = "DOSProp"
@@ -195,7 +240,8 @@ new_dev_fld_ref = {
     "Office New": "Off",
     "Retail (Power Center) New": "Ret",
     "Retail New": "Ret",
-    "Student New": "Oth"
+    "Student New": "Oth",
+    "Single Family": "SF"
 }
 pipe_fld_ref = {
     "Flex Pipeline": "Ind",
@@ -206,7 +252,8 @@ pipe_fld_ref = {
     "Office Pipeline": "Off",
     "Retail Pipeline": "Ret",
     "Specialty Pipeline": "Oth",
-    "Student Pipeline": "Oth"
+    "Student Pipeline": "Oth",
+    "Single Family": "SF"
 }
 new_dev_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + "LIKE '%New'"
 pipe_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + "LIKE '%Pipeline'"
@@ -219,6 +266,7 @@ st_type_emb_tbl = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\tod_
 walk_net = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\LCBRT_data.gdb\network\walk_network_ND"
 imp_field = "Length"
 cost = "1320"
+restrictions = None
 
 # %% DERIVED INPUTS/SPECS
 par_est_fields = genFieldList("Par")  # par_fields, par_fields_u
@@ -226,7 +274,6 @@ new_dev_fields = genFieldList("New")  # new_dev_fields, new_dev_fields_u
 ex_lu_fields = genFieldList("Ex")  # ex_lu_fields, ex_lu_fields_u
 pipe_fields = genFieldList("Pipe")  # pipe_fields, pipe_fields_u
 # out_gdb = r"D:\Users\DE7\Documents\temp\TOD_TestRun\TOD_TEST_CR.gdb"
-
 
 # %% PROCESS
 try:
@@ -352,13 +399,21 @@ try:
         # new_dev_fields_u = sorted({f for f in new_dev_fields})
         # pipe_fields_u = sorted({f for f in pipe_fields})
         newpipe_fields = [newpipe_par_field] + new_dev_fields + pipe_fields
-        newpipe_df = pd.DataFrame(arcpy.da.TableToNumPyArray(newpipe, newpipe_fields))
-        newpipe_sum = newpipe_df.groupby(newpipe_par_field).sum()
+        newpipe_df = pd.DataFrame(
+            arcpy.da.TableToNumPyArray(
+                in_table=newpipe,
+                field_names=newpipe_fields,
+                null_value=0
+            )
+        )
+        newpipe_sum = newpipe_df.groupby(newpipe_par_field).sum().reset_index()
         # -- Extend table
         print "...Adding new and pipeline data to parcels"
-        extendTableDf(in_table=suit_fc, table_match_field=id_field,
-                      df=newpipe_sum, df_match_field=newpipe_par_field,
-                      append_only=False, null_value=0.0)
+        extendTableDf(in_table=suit_fc,
+                      table_match_field=id_field,
+                      df=newpipe_sum,
+                      df_match_field=newpipe_par_field,
+                      append_only=False)
 
         # -- Calculate fields
         print "...Calculating existing (parcel-based + new development)"
@@ -385,25 +440,31 @@ try:
             with arcpy.da.UpdateCursor(suit_fc, [ex_lu_field, pipe_field, expi_field]) as c:
                 for r in c:
                     ex_val, pipe_val, expi_val = r
+                    if ex_val is None:
+                        ex_val = 0
+                    if pipe_val is None:
+                        pipe_val = 0
                     r[-1] = ex_val + pipe_val
                     c.updateRow(r)
 
-        # apply TOD templates
+        # Apply TOD templates
+        print "Applying TOD templates..."
         if USE_NET:
             # Net-based run:
             applyTODTemplates(in_gdb=scen_gdb, fishnet_fc=suit_fc, fishnet_id=id_field, technology_name=TECH,
                               fishnet_suitability_field='tot_suit', fishnet_where_clause="", network_dataset=walk_net,
-                              impedance_attribute='Length', restrictions=None, preset_stations_field=None,
-                              weight_by_area=True, share_threshold=0.5)
+                              impedance_attribute=imp_field, restrictions=restrictions, preset_stations_field=None,
+                              weight_by_area=True, share_threshold=SHARE_THRESHOLD)
             dev_area_tbl = path.join(scen_gdb, 'dev_area_activities_net_suit')
         else:
             # Simple buffer-based run:
             applyTODTemplates(in_gdb=scen_gdb, fishnet_fc=suit_fc, fishnet_id=id_field, technology_name=TECH,
                               fishnet_suitability_field='tot_suit', fishnet_where_clause="",
-                              preset_stations_field=None, weight_by_area=True, share_threshold=0.5)
+                              preset_stations_field=None, weight_by_area=True, share_threshold=SHARE_THRESHOLD)
             dev_area_tbl = path.join(scen_gdb, 'dev_area_activities_suit')
 
         # Adjust dev_area_activities_net_suit  activity values to SQFT
+        print "Converting activity targets to Sq Ft targets from station type embellishments..."
         # -- Add fields
         tgt_sf_field_dict = {
             "SF_SF_Tgt": ("RES", "shr_sfr", "sfr_sqft"),
@@ -413,33 +474,46 @@ try:
             "Off_SF_Tgt": ("JOB", "shr_off", "off_sqft"),
             "Hot_SF_Tgt": ("HOTEL", "shr_hot", "hot_sqft")
         }
-        tgt_sf_fields = sorted(tgt_sf_field_dict.keys())
+        tgt_sf_fields = genFieldList("Tgt", include_untracked=False)
         for tgt_sf_field in tgt_sf_fields:
             arcpy.AddField_management(dev_area_tbl, tgt_sf_field, "LONG")
             arcpy.CalculateField_management(dev_area_tbl, tgt_sf_field, 0)
+
         # -- Dump reference tables
         stations_df = pd.DataFrame(arcpy.da.TableToNumPyArray(stations, ["stn_name", "stn_type"]))
         stn_type_fields = ["stn_type"] + [fld for k in tgt_sf_fields for fld in tgt_sf_field_dict[k][-2:]]
-        stn_types_df = pd.DataFrame(arcpy.da.TableToNumPyArray(in_table=st_type_tbl, field_names=stn_type_fields))
+        stn_types_df = pd.DataFrame(
+            arcpy.da.TableToNumPyArray(
+                in_table=st_type_tbl,
+                field_names=stn_type_fields
+            )
+        )
         # -- Tack on existing + pipeline square footage fields to the dev_area_tbl
         append_fields = [id_field, "stn_name"] + expi_fields
         parcels_df = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
-                in_table=suit_fc, field_names=append_fields, null_value=0.0
+                in_table=suit_fc,
+                field_names=append_fields,
+                null_value=0.0
             )
         )
-        extendTableDf(in_table=dev_area_tbl, table_match_field=id_field,
-                      df=parcels_df, df_match_field=id_field, append_only=False)
+        extendTableDf(in_table=dev_area_tbl,
+                      table_match_field=id_field,
+                      df=parcels_df,
+                      df_match_field=id_field,
+                      append_only=False)
 
-        # -- Update dev_area_tbl
-        print "converting targets to square footage by land use"
+        # -- Update dev_area_tbl to include more specific activity type sqft
         tgt_act_fields = list({tgt_sf_field_dict[k][0] for k in tgt_sf_fields})
         dev_area_fields = [id_field] + tgt_sf_fields + tgt_act_fields
         with arcpy.da.UpdateCursor(dev_area_tbl, dev_area_fields) as c:
             for r in c:
                 parcel_id = r[0]
                 stn_name = parcels_df[parcels_df[id_field] == parcel_id]["stn_name"].values[0]
-                stn_type = stations_df[stations_df["stn_name"] == stn_name]["stn_type"].values[0] + ' - ' + TECH
+                stn_type = " - ".join(
+                    [stations_df[stations_df["stn_name"] == stn_name]["stn_type"].values[0],
+                     TECH]
+                )
                 stn_type_data = stn_types_df[stn_types_df["stn_type"] == stn_type]
                 for tgt_sf_field in tgt_sf_fields:
                     tgt_act_field, share_field, sqft_field = tgt_sf_field_dict[tgt_sf_field]
@@ -453,15 +527,23 @@ try:
                         r[update_idx] = estimate
                         c.updateRow(r)
 
+        # Adjust build-out targets based on existing and pipeline development
+        print "Adjusting build-out targets based on existing and pipeline development"
         adj_tgt_tbl = dev_area_tbl + "_adj"
         out_fields = [f.replace("Tgt", "Adj") for f in tgt_sf_fields]
         expi_refs = [f.replace("Tgt", "ExPi") for f in tgt_sf_fields]
-        adjustTargetsBasedOnExisting2(dev_areas_table=dev_area_tbl, id_field=id_field,
-                                      station_area_field="stn_name", existing_fields=expi_refs,
-                                      target_fields=tgt_sf_fields, out_fields=out_fields, out_table=adj_tgt_tbl,
+        adjustTargetsBasedOnExisting2(dev_areas_table=dev_area_tbl,
+                                      id_field=id_field,
+                                      station_area_field="stn_name",
+                                      existing_fields=expi_refs,
+                                      target_fields=tgt_sf_fields,
+                                      out_fields=out_fields,
+                                      out_table=adj_tgt_tbl,
                                       where_clause=None)
 
-        # TODO:  Blend TOD results with baseline parcel expected LU, mean FAR
+        # TODO:  Blend TOD results with baseline parcel expected LU, mean FAR for "build out capacity"
+        # TODO:  Subtract build-out estimates from existing floor area for "change cpacity"
+        # TODO:  Run allocation
 
 
 except LicenseError:
