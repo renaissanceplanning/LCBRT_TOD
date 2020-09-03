@@ -265,10 +265,13 @@ cost = "1320"
 restrictions = None
 
 # %% DERIVED INPUTS/SPECS
-par_est_fields = genFieldList("Par") 
+par_est_fields = genFieldList("Par")
 new_dev_fields = genFieldList("New") 
 ex_lu_fields  = genFieldList("Ex") 
 pipe_fields = genFieldList("Pipe") 
+expi_fields = genFieldList("ExPi")
+#tgt_fields = genFieldList("Tgt")
+#adj_fields = genFieldList("Adj")
 
 
 # %% PROCESS
@@ -411,11 +414,13 @@ try:
                       
         # -- Calculate fields
         print "...Calculating existing (parcel-based + new development)"
-        for ex_lu_field in ex_lu_fields:            
-            par_field = ex_lu_field.replace("Ex", "Par")
-            new_dev_field = ex_lu_field.replace("Ex", "New")
+        for ex_lu_field, par_field, new_dev_field in zip(
+            ex_lu_fields, par_fields, new_dev_fields):            
+            #par_field = ex_lu_field.replace("Ex", "Par")
+            #new_dev_field = ex_lu_field.replace("Ex", "New")
             arcpy.AddField_management(suit_fc, ex_lu_field, "LONG")
-            with arcpy.da.UpdateCursor(suit_fc, [par_field, new_dev_field, ex_lu_field]) as c:
+            with arcpy.da.UpdateCursor(
+                suit_fc, [par_field, new_dev_field, ex_lu_field]) as c:
                 for r in c:                    
                     par_val, new_dev_val, ex_lu_val = r
                     if new_dev_val:
@@ -425,11 +430,12 @@ try:
                     c.updateRow(r)
 
         print "...Calculating existing + pipeline"
-        expi_fields = []
-        for ex_lu_field in ex_lu_fields:
-            pipe_field = ex_lu_field.replace("Ex", "Pipe")
-            expi_field = ex_lu_field.replace("Ex", "ExPi")
-            expi_fields.append(expi_field)
+        #expi_fields = []
+        for ex_lu_field, pipe_field, expi_field in zip(
+            ex_lu_fields, pipe_fields, expi_fields):
+            #pipe_field = ex_lu_field.replace("Ex", "Pipe")
+            #expi_field = ex_lu_field.replace("Ex", "ExPi")
+            #expi_fields.append(expi_field)
             arcpy.AddField_management(suit_fc, expi_field, "LONG")
             with arcpy.da.UpdateCursor(suit_fc, [ex_lu_field, pipe_field, expi_field]) as c:
                 for r in c:
@@ -473,7 +479,7 @@ try:
             arcpy.AddField_management(dev_area_tbl, tgt_sf_field, "LONG")
             arcpy.CalculateField_management(dev_area_tbl, tgt_sf_field, 0)
         
-        # -- Dump reference tables
+        # -- Dump reference tables: stations, station_types, parcels
         stations_df = pd.DataFrame(arcpy.da.TableToNumPyArray(stations, ["stn_name", "stn_type"]))
         stn_type_fields = ["stn_type"] + [fld for k in tgt_sf_fields for fld in tgt_sf_field_dict[k][-2:]]
         stn_types_df = pd.DataFrame(
@@ -481,8 +487,7 @@ try:
                 in_table=st_type_tbl, 
                 field_names=stn_type_fields
                 )
-            )
-        # -- Tack on existing + pipeline square footage fields to the dev_area_tbl
+            )        
         append_fields = [id_field, "stn_name"] + expi_fields
         parcels_df = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
@@ -490,12 +495,7 @@ try:
                 field_names=append_fields, 
                 null_value=0.0
                 )
-            )
-        extendTableDf(in_table=dev_area_tbl, 
-                      table_match_field=id_field,
-                      df=parcels_df, 
-                      df_match_field=id_field,
-                      append_only=False)
+            )        
 
         # -- Update dev_area_tbl to include more specific activity type sqft
         tgt_act_fields = list({tgt_sf_field_dict[k][0] for k in tgt_sf_fields})
@@ -520,23 +520,30 @@ try:
                         estimate = tgt_val * share * sqft
                         r[update_idx] = estimate
                         c.updateRow(r)
+        
+        # -- Tack on existing + pipeline square footage fields to the dev_area_tbl
+        extendTableDf(in_table=dev_area_tbl, 
+                      table_match_field=id_field,
+                      df=parcels_df, 
+                      df_match_field=id_field,
+                      append_only=False)
 
         # Adjust build-out targets based on existing and pipeline development
         print "Adjusting build-out targets based on existing and pipeline development"
         adj_tgt_tbl = dev_area_tbl + "_adj"
-        out_fields = [f.replace("Tgt", "Adj") for f in tgt_sf_fields]
+        adj_fields = [f.replace("Tgt", "Adj") for f in tgt_sf_fields]
         expi_refs = [f.replace("Tgt", "ExPi") for f in tgt_sf_fields]
         adjustTargetsBasedOnExisting2(dev_areas_table=dev_area_tbl, 
                                       id_field=id_field,
                                       station_area_field="stn_name", 
                                       existing_fields=expi_refs,
                                       target_fields=tgt_sf_fields, 
-                                      out_fields=out_fields, 
+                                      out_fields=adj_fields, 
                                       out_table=adj_tgt_tbl,
                                       where_clause=None)
 
         # TODO:  Blend TOD results with baseline parcel expected LU, mean FAR for "build out capacity"
-        # TODO:  Subtract build-out estimates from existing floor area for "change cpacity"
+        # TODO:  Subtract build-out estimates from existing floor area for "change capacity"
         # TODO:  Run allocation
         
 
