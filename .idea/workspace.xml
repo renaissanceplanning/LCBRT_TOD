@@ -1,7 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="update allocation docstring" />
+    <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="update allocation to work from pd df&#10;other tidying updates to scenario tools">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/python/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/allocation.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/allocation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/generate_scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/generate_scenarios.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -179,8 +202,27 @@
       <option name="project" value="LOCAL" />
       <updated>1599079870339</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="update allocation to work from pd df&#10;other tidying updates to scenario tools">
+      <created>1599102027667</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1599102027667</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <ignored-roots>
@@ -188,7 +230,8 @@
     </ignored-roots>
     <MESSAGE value="initial commit" />
     <MESSAGE value="update allocation docstring" />
-    <option name="LAST_COMMIT_MESSAGE" value="update allocation docstring" />
+    <MESSAGE value="update allocation to work from pd df&#10;other tidying updates to scenario tools" />
+    <option name="LAST_COMMIT_MESSAGE" value="update allocation to work from pd df&#10;other tidying updates to scenario tools" />
   </component>
   <component name="WindowStateProjectService">
     <state x="698" y="309" key="#Notifications" timestamp="1599094503119">
@@ -281,10 +324,11 @@
     </state>
     <state x="461" y="129" key="SettingsEditor/0.0.1920.961@0.0.1920.961" timestamp="1598626751797" />
     <state x="461" y="130" key="SettingsEditor/0.0.1920.971@0.0.1920.971" timestamp="1599080674768" />
-    <state x="552" y="218" key="Vcs.Push.Dialog.v2" timestamp="1599079875248">
-      <screen x="0" y="0" width="1920" height="971" />
+    <state x="552" y="218" key="Vcs.Push.Dialog.v2" timestamp="1599102031261">
+      <screen x="0" y="0" width="1920" height="973" />
     </state>
     <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.971@0.0.1920.971" timestamp="1599079875248" />
+    <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.973@0.0.1920.973" timestamp="1599102031261" />
     <state width="968" height="488" key="XDebugger.FullValuePopup" timestamp="1598985310582">
       <screen x="0" y="0" width="1920" height="961" />
     </state>

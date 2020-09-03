@@ -272,6 +272,7 @@ pipe_fields = genFieldList("Pipe")
 expi_fields = genFieldList("ExPi")
 #tgt_fields = genFieldList("Tgt")
 #adj_fields = genFieldList("Adj")
+expec_fields = genFieldList("Expec")
 
 
 # %% PROCESS
@@ -543,6 +544,8 @@ try:
                                       where_clause=None)
 
         # TODO:  Blend TOD results with baseline parcel expected LU, mean FAR for "build out capacity"
+            ''' calculate FA from expected build_sqft * FAR globally and then split for each activity type '''
+
         # TODO:  Subtract build-out estimates from existing floor area for "change capacity"
         # TODO:  Run allocation
         

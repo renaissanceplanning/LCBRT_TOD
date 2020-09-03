@@ -75,7 +75,7 @@ def allocate(
     # set up dataframe to read values into loop for tracking count, sorted by suitability
     field_names = [suit_fc_id_field, suit_field, suit_fc_seg_field] + suit_ex_fields
     suit_df = pd.DataFrame(
-        arcpy.da.TableToNumPyArray(suit_fc, field_names)
+        arcpy.da.TableToNumPyArray(suit_fc, field_names, null_value=0.0)
     ).sort_values(by=suit_field, ascending=False, inplace=True)
     # dev_areas_df = pd.DataFrame(arcpy.da.TableToNumPyArray(dev_areas_tbl, [suit_fc_id_field] + dev_areas_fields))
     # suit_df = pd.concat([suit_df, dev_areas_df], axis=1, join="inner")
@@ -86,7 +86,7 @@ def allocate(
         segment_counter = Counter(seg_controls)
         # iterate over parcel rows
         for index, row in group.iterrows():
-            parcel_count = Counter({
+            parcel_count = dict({
                 'Industrial': row[ind_sqft_cap],
                 'Office': row[off_sqft_cap],
                 'Multifamily': row[mfr_sqft_cap],
@@ -94,8 +94,12 @@ def allocate(
                 'Hospitality': row[hot_sqft_cap],
                 'Retail': row[ret_sqft_cap]
             })
+            for key in parcel_count.keys():
+                segment_act_control = seg_controls[key]
+                parcel_act_cap = parcel_count[key]
+                new_act_control = segment_act_control - parcel_act_cap
+                if not new_act_control > 0:
 
-            segment_counter.subtract(parcel_count)
             # check to see if segment counter is at 0 for all activites,
             #   move to next segment
             if all(value == 0 for value in segment_counter.values()):
