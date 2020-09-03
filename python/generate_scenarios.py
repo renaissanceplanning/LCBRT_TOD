@@ -131,7 +131,7 @@ The key steps in the scenario generation process are outlined below:
       - TODO: Run allocation by segment
 """
 
-#%% IMPORTS
+# %% IMPORTS
 import arcpy
 from suitability import generate_suitability
 from walksheds import generate_walksheds
@@ -142,13 +142,13 @@ from tod.HandyGP import extendTableDf
 import pandas as pd
 import numpy as np
 
-#%% WORKSPACES AND SCENARIO NAMES.
+# %% WORKSPACES AND SCENARIO NAMES.
 source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\LCBRT_data.gdb"
 scenarios_ws = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios_LAB"
 scenarios = ['WE_Sum', 'WE_Fair']
 arcpy.env.overwriteOutput = True
 
-#%% GLOBAL SETTINGS/SPECS
+# %% GLOBAL SETTINGS/SPECS
 USE_NET = False
 TECH = "BRT"
 SHARE_THRESHOLD = 0.5
@@ -169,7 +169,7 @@ weights = {
     "dev_size": 0.1
     }
 
-#%% HELPER FUNCTIONS AND CLASSES
+# %% HELPER FUNCTIONS AND CLASSES
 class LicenseError(Exception):
     pass
 
@@ -200,7 +200,7 @@ def makeFieldRefDict(in_dict, suffix):
         out_dict[k] = "{}_SF_{}".format(v, suffix)
     return out_dict
 
-#%% INPUT DATA SETS
+# %% INPUT DATA SETS
 # Parcels
 parcels = "parcels"
 id_field = "ParclID"
@@ -264,14 +264,14 @@ imp_field = "Length"
 cost = "1320"
 restrictions = None
 
-#%% DERIVED INPUTS/SPECS
+# %% DERIVED INPUTS/SPECS
 par_est_fields = genFieldList("Par") 
 new_dev_fields = genFieldList("New") 
 ex_lu_fields  = genFieldList("Ex") 
 pipe_fields = genFieldList("Pipe") 
 
 
-#%% PROCESS
+# %% PROCESS
 try:
     if arcpy.CheckExtension("Network") == "Available":
         arcpy.CheckOutExtension("Network")
