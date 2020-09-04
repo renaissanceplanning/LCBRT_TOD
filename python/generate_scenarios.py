@@ -647,15 +647,16 @@ try:
 
         # TODO:  Run allocation
         # dump parcels to df and cap table to df and join
-        p_flds = [id_field, seg_field, suit_field]
-        cap_flds = [id_field] + cap_fields
+        p_flds = [id_field, seg_id_field, 'tot_suit']
+        cap_flds = [id_field] + chgcap_fields
         pdf = pd.DataFrame(
-            arcpy.da.TableToNumPyArray(in_table=parcel_fc, field_names=p_flds, null_value=0.0)
+            arcpy.da.TableToNumPyArray(in_table=suit_fc, field_names=p_flds, null_value=0.0)
         ).set_index(keys=id_field)
         capdf = pd.DataFrame(
-            arcpy.da.TableToNumPyArray(in_table=capacity_tbl, field_names=cap_flds, null_value=0.0)
+            arcpy.da.TableToNumPyArray(in_table=capacity_table, field_names=cap_flds, null_value=0.0)
         ).set_index(keys=id_field)
         p_cap = pdf.join(other=capdf)
+
         print ""
 
 
