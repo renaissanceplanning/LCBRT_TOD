@@ -4,10 +4,9 @@ Created on Thu Sep  3 19:48:44 2020
 
 @author: AK7
 """
-
+# %% IMPORTS
 import pandas as pd
 import numpy as np
-
 
 #%% CONTROLS
 controls = pd.DataFrame(
@@ -97,7 +96,7 @@ for cap_field, ctrl_field in zip(cap_fields, ctrl_fields):
         
         # Identify the last recip that could be filled
         last_recip = recips_slc[crit][cumu_field].argmax()
-        last_recip = recips_slc.index[last_recip]
+        #last_recip = recips_slc.index[last_recip]
         
         # Check to see if the allocated quantity exceeds the ctrl
         alloc = recips_slc[alloc_field].sum()
@@ -132,8 +131,7 @@ result = pd.concat(alloc_cols, axis=1)
         
 # %%
 combo = pd.concat([recips_sorted, result], axis=1)
-        
-    
+
         
         
         
