@@ -149,7 +149,7 @@ import numpy as np
 
 # %% WORKSPACES AND SCENARIO NAMES.
 source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\LCBRT_data.gdb"
-scenarios_ws = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios_LAB"
+scenarios_ws = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios"
 scenarios = ['WE_Sum', 'WE_Fair']
 arcpy.env.overwriteOutput = True
 
@@ -238,8 +238,9 @@ def makeTargetFieldsDict(tgt_fields):
 
 # %% INPUT DATA SETS
 # Parcels
-parcels = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\Parcels.shp"
-# parcels = "parcels"
+# parcels = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\Parcels.shp"
+parcels = "parcels"
+parcels = path.join(source_gdb, parcels)
 id_field = "ParclID"
 lu_field = "LandUse"
 par_est_fld_ref = {
@@ -263,7 +264,8 @@ basecap_sqft = "EXP_Sqft"
 basecap_lu = "Exp_LU"
 
 # New/pipeline features
-newpipe_fc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\SBF_New_Pipe_Merged_Parcel_SJ.shp"  # TODO: add to source_gdb?
+newpipe_fc = "pipeline_SBF_New_Pipe_Merged_SJ"
+newpipe_fc = path.join(source_gdb, newpipe_fc)
 newpipe_par_field = "ParclID"
 newpipe_sqft = "RBA"
 newpipe_lu = "PropertyTy"
@@ -644,11 +646,21 @@ try:
                     c.updateRow(r)
 
         # TODO:  Run allocation
-
+        # dump parcels to df and cap table to df and join
+        p_flds = [id_field, seg_field, suit_field]
+        cap_flds = [id_field] + cap_fields
+        pdf = pd.DataFrame(
+            arcpy.da.TableToNumPyArray(in_table=parcel_fc, field_names=p_flds, null_value=0.0)
+        ).set_index(keys=id_field)
+        capdf = pd.DataFrame(
+            arcpy.da.TableToNumPyArray(in_table=capacity_tbl, field_names=cap_flds, null_value=0.0)
+        ).set_index(keys=id_field)
+        p_cap = pdf.join(other=capdf)
+        print ""
 
 
 except LicenseError:
-    arcpy.AddWarning("Network Analyst not available to genreate walksheds")
+    arcpy.AddWarning("Network Analyst not available to generate walksheds")
 except Exception as e:
     arcpy.AddMessage(e)
     raise

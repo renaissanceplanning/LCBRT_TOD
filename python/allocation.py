@@ -17,26 +17,15 @@ for segment in segments:
 
 
 def allocate_dict(
-    suit_fc,
-    suit_fc_id_field,
+    suit_df,
+    suit_df_id_field,
     suit_field,
-    suit_fc_seg_field,
+    suit_df_seg_field,
     suit_cap_fields,
     control_tbl,
     control_fields,
 ):
-    """
 
-    :param suit_fc: parcel layer with parcel level change capacity values in sqft
-    :param suit_fc_id_field: unique id field
-    :param suit_field: suitability ranking by parcel
-    :param suit_fc_seg_field: segment identifier
-    :param suit_cap_fields: fields containing capacity for activity by parcel
-    :param filled_cap_fields: fields to hold the count of sqft allocated per parcel
-    :param control_tbl: table of control totals for each activity by segment
-    :param control_fields:
-    :return:
-    """
     # read control totals to dictionary
     control_dict = (
         pd.read_csv(control_tbl)
@@ -44,14 +33,14 @@ def allocate_dict(
         .apply(lambda x: x.to_dict(orient="list"))
         .to_dict()
     )
-    # set up dataframe to read values into loop for tracking count, sorted by suitability
-    field_names = [suit_fc_id_field, suit_field, suit_fc_seg_field] + suit_cap_fields
-    suit_df = pd.DataFrame(
-        arcpy.da.TableToNumPyArray(suit_fc, field_names, null_value=0.0),
-    ).set_index(suit_fc_id_field)
+    # # set up dataframe to read values into loop for tracking count, sorted by suitability
+    # field_names = [suit_fc_id_field, suit_field, suit_fc_seg_field] + suit_cap_fields
+    # suit_df = pd.DataFrame(
+    #     arcpy.da.TableToNumPyArray(suit_fc, field_names, null_value=0.0),
+    # ).set_index(suit_fc_id_field)
 
     suit_df.sort_values(
-        by=[suit_fc_seg_field, suit_field], ascending=False, inplace=True
+        by=[suit_df_seg_field, suit_field], ascending=False, inplace=True
     )
 
     (
@@ -63,15 +52,15 @@ def allocate_dict(
         ret_sqft_cap,
     ) = suit_cap_fields
 
-    # (res_sqft_cap,
-    #  com_sqft_cap, ind_sqft_cap,) = suit_cap_fields
-    # create a df to hold output filled parcel capacities
     filled_rows = {}
     # loop over segments and create control dictionary
-    for segment, group in suit_df.groupby(suit_fc_seg_field):
+    for segment, group in suit_df.groupby(suit_df_seg_field):
+        print "---Segment {}---".format(segment)
         seg_controls = dict(
             zip(control_dict[segment]["activity"], control_dict[segment]["net"])
         )
+        for k, v in seg_controls.items():
+            print "\t{}: {}".format(k, v)
         # iterate over parcel rows
         for parcel_id, row in group.iterrows():
             new_row = {}
@@ -79,18 +68,20 @@ def allocate_dict(
                 {
                     "Ind": row[ind_sqft_cap],
                     "Off": row[off_sqft_cap],
-                    "Res": row[mfr_sqft_cap],
+                    "MF": row[mfr_sqft_cap],
                     "SF": row[sfr_sqft_cap],
                     "Hot": row[hot_sqft_cap],
                     "Ret": row[ret_sqft_cap],
                 }
             )
             for act_key in parcel_count.keys():
-                filled_att = "{}_SF_{}".format(act_key, "filled")
+                alloc_att = "{}_SF_{}".format(act_key, "alloc")
+                unalloc_att = "{}_SF_{}".format(act_key, "unalloc")
                 segment_act_control = seg_controls[act_key]  # get segment activity control val
                 parcel_act_cap = parcel_count[act_key]  # get parcel activity capacity val (ie fill_to_val)
                 updated_act_control = (segment_act_control - parcel_act_cap)  # calculate updated control
                 # if new control  is negative, reset activity control and parcel allocations
+                dist = 0.0
                 if updated_act_control < 0:
                     dist = updated_act_control * -1
                     updated_act_control += dist
@@ -98,12 +89,18 @@ def allocate_dict(
                 seg_controls[
                     act_key
                 ] = updated_act_control  # update activity control to reflect allocation
-                new_row[filled_att] = parcel_act_cap
+                new_row[alloc_att] = parcel_act_cap
+                new_row[unalloc_att] = dist
                 filled_rows[parcel_id] = new_row
+
                 if all(value == 0 for value in seg_controls.values()):
                     break
-    # filled_array = np.array(list(filled_rows.items()), dtype=)
-    print "done"
+        print "---End Segment {}---".format(segment)
+        for k, v in seg_controls.items():
+            print "\t{}: {}".format(k, v)
+    filled_df = pd.DataFrame(filled_rows).T
+
+    return filled_df
 
 
 def allocate_df(
@@ -197,34 +194,43 @@ def allocate_df(
 
 
 if __name__ == "__main__":
-    # %% Accumulate capacity
-    ctrl_fields = ["Res", "Com", "Ind"]
-    suit_cap_fields = ["ResCap", "ComCap", "IndCap"]
+    # TODO: join cap table and parcels df with only necessary attributes (ParclID,segnum, XXX_SF_ChgCap...)
     # suitability polygon inputs
-    suit_fc = r"D:\Users\DE7\Documents\temp\suit_fc_test.csv"
-    suit_fc_id_field = "ParclID"
-    suit_fc_seg_field = "Seg"
-    suit_field = "suit"
-    # suit_cap_fields = [
-    #     "Ret_SF_Cap",
-    #     "Ind_SF_Cap",
-    #     "Off_SF_Cap",
-    #     "MF_SF_Cap",
-    #     "SF_SF_Cap",
-    #     "Hot_SF_Cap"
-    # ]  ## assuming this is the TOD type embellishments inside station area and areas outside TOD use values calced for Vacant
-
-    control_tbl = r"D:\Users\DE7\Documents\temp\control_test.csv"
+    # processed elements
+    parcel_fc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb\parcels"
+    capacity_tbl = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb\capacity"
+    id_field = "ParclID"
+    seg_field = "seg_num"
+    suit_field = "tot_suit"
+    cap_fields = [
+        "Ret_SF_ChgCap",
+        "Ind_SF_ChgCap",
+        "Off_SF_ChgCap",
+        "MF_SF_ChgCap",
+        "SF_SF_ChgCap",
+        "Hot_SF_ChgCap"
+    ]
+    # control elements
+    control_tbl = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv"
     control_fields = ["seg", "activity", "net"]
-
     control_seg_attr = "segment"
 
-    allocate(
-        suit_fc=suit_fc,
-        suit_fc_id_field=suit_fc_id_field,
+    # make df to insert
+    p_flds = [id_field, seg_field, suit_field]
+    cap_flds = [id_field] + cap_fields
+    pdf = pd.DataFrame(
+        arcpy.da.TableToNumPyArray(in_table=parcel_fc, field_names=p_flds, null_value=0.0)
+    ).set_index(keys=id_field)
+    capdf = pd.DataFrame(
+        arcpy.da.TableToNumPyArray(in_table=capacity_tbl, field_names=cap_flds, null_value=0.0)
+    ).set_index(keys=id_field)
+    p_cap = pdf.join(other=capdf)
+    allocate_dict(
+        suit_df=p_cap,
+        suit_df_id_field=id_field,
         suit_field=suit_field,
-        suit_fc_seg_field=suit_fc_seg_field,
-        suit_cap_fields=suit_cap_fields,
+        suit_df_seg_field=seg_field,
+        suit_cap_fields=cap_fields,
         control_tbl=control_tbl,
         control_fields=control_fields,
     )
