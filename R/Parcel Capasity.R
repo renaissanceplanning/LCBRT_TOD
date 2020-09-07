@@ -319,6 +319,13 @@ Large_Parcels <- rbind(NA_Large_Par, non_na_large_par)
 Parcels <- rbind(Small_Parcels, Large_Parcels)
 write_sf(Parcels, "Parcels.shp")
 
+# adding expected floor area
+Parcels <- read_sf("Parcels.shp")
+
+Parcels$EXP_Sqft <- Parcels3$Sq_Feet * Parcels3$Mean_FAR
+
+write_sf(Parcels, "Parcels.shp")
+write_sf(Parcels,"K:/Projects/BCDCOG/Features/Files_For_RDB/RDB_V3/Backup/Parcels_Back_Up.shp")
 
 
 

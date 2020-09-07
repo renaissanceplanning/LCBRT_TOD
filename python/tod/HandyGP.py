@@ -219,7 +219,13 @@ def extendTableDf(in_table, table_match_field, df, df_match_field, **kwargs):
                          array_match_field=df_match_field,
                          **kwargs)
 
-
+def dfToArcpyTable(df, out_table):
+    in_array = np.array(
+        np.rec.fromrecords(
+            df.values, names=df.dtypes.index.tolist()
+        )
+    )
+    arcpy.da.NumPyArrayToTable(in_array, out_table)
 # Maximum overlap spatial join
 # ------------------------------------------------------------------------------------
 def maximumOverlapSpatialJoin(in_features, in_id_field,
