@@ -101,12 +101,12 @@ if __name__ == "__main__":
     suit_fc_seg_field = 'seg_num'
     suit_field = "tot_suit"
     suit_cap_fields = [
-        "Ret_SF_Cap",
-        "Ind_SF_Cap",
-        "Off_SF_Cap",
-        "MF_SF_Cap",
-        "SF_SF_Cap",
-        "Hot_SF_Cap"
+        "Ret_SF_Par",
+        "Ind_SF_Par",
+        "Off_SF_Par",
+        "MF_SF_Par",
+        "SF_SF_Par",
+        "Hot_SF_Par"
     ]  ## assuming this is the TOD type embellishments inside station area and areas outside TOD use values calced for Vacant
 
     control_tbl = (

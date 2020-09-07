@@ -20,8 +20,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="allocation updates&#10;initial capacity definiitions">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/generate_scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/generate_scenarios.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/.idea/scripts.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/allocation.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/allocation.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,6 +58,11 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="vcs.Git" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Users\DE7\Documents\GitHub\LCBRT_TOD" />
+    </key>
   </component>
   <component name="RunManager" selected="Python.allocation">
     <configuration name="allocation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -168,7 +180,7 @@
       </list>
     </recent_temporary>
   </component>
-  <component name="SpellCheckerSettings" BundledDictionaries="0" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" Dictionaries="0" CorrectionsLimit="5" DefaultDictionary="application-level" UseSingleDictionary="true" />
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -223,13 +235,12 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <ignored-roots>
