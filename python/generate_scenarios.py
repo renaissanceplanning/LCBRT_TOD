@@ -568,8 +568,6 @@ try:
         # Adjust build-out targets based on existing and pipeline development
         print "Adjusting build-out targets based on existing and pipeline development"
         adj_tgt_tbl = dev_area_tbl + "_adj"
-        # adj_fields = [f.replace("Tgt", "Adj") for f in tgt_sf_fields]
-        # expi_refs = [f.replace("Tgt", "ExPi") for f in tgt_sf_fields]
         tgt_suffix = tgt_sf_fields[0].split("_SF_")[-1]
         expi_suffix = expi_fields[0].split("_SF_")[-1]
         expi_refs = [f.replace(tgt_suffix, expi_suffix) for f in tgt_sf_fields]
@@ -650,7 +648,7 @@ try:
                             r[0] = tcap - ex
                     c.updateRow(r)
 
-        # TODO:  Run allocation
+        # Run allocation
         # dump parcels to df and cap table to df and join
         p_flds = [id_field, seg_id_field, 'tot_suit']
         cap_flds = [id_field] + chgcap_fields
@@ -677,6 +675,10 @@ try:
             suit_cap_fields=chgcap_fields,
             control_dict=ctl_dict,
         )
+        # generate QA summaries
+        cap_summaries = p_cap[p_flds + chgcap_fields].groupby(seg_id_field).sum
+        seg_allocation_sums = allocation_dict.groupby(seg_id_field).sums()
+
         # write out allocation table
         allocation_tbl = path.join(scen_gdb, 'allocation')
         out_array = np.array(np.rec.fromrecords(allocation_dict.values))

@@ -68,6 +68,7 @@ def allocate_dict(
                     updated_act_control += dist
                     parcel_act_cap -= dist
                 seg_controls[act_key] = updated_act_control  # update activity control to reflect allocation
+                new_row[suit_df_seg_field] = segment
                 new_row[alloc_att] = parcel_act_cap
                 filled_rows[parcel_id] = new_row
 
