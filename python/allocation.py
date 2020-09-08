@@ -30,12 +30,12 @@ def allocate_dict(
     )
 
     (
+        sfr_sqft_cap,
+        mfr_sqft_cap,
+        ret_sqft_cap,
         ind_sqft_cap,
         off_sqft_cap,
-        mfr_sqft_cap,
-        sfr_sqft_cap,
         hot_sqft_cap,
-        ret_sqft_cap,
     ) = suit_cap_fields
 
     filled_rows = {}
@@ -48,12 +48,12 @@ def allocate_dict(
             new_row = {}
             parcel_count = dict(
                 {
+                    "SF": row[sfr_sqft_cap],
+                    "MF": row[mfr_sqft_cap],
+                    "Ret": row[ret_sqft_cap],
                     "Ind": row[ind_sqft_cap],
                     "Off": row[off_sqft_cap],
-                    "MF": row[mfr_sqft_cap],
-                    "SF": row[sfr_sqft_cap],
                     "Hot": row[hot_sqft_cap],
-                    "Ret": row[ret_sqft_cap],
                 }
             )
             for act_key in parcel_count.keys():
@@ -191,13 +191,14 @@ if __name__ == "__main__":
     seg_field = "seg_num"
     suit_field = "tot_suit"
     cap_fields = [
-        "Ind_SF_ChgCap",
-        "Ret_SF_ChgCap",
-        "MF_SF_ChgCap",
-        "Off_SF_ChgCap",
         "SF_SF_ChgCap",
+        "MF_SF_ChgCap",
+        "Ret_SF_ChgCap",
+        "Ind_SF_ChgCap",
+        "Off_SF_ChgCap",
         "Hot_SF_ChgCap",
     ]
+
     # control elements
     control_tbl = (
         r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv"
@@ -223,21 +224,21 @@ if __name__ == "__main__":
     ).set_index(keys=id_field)
     p_cap = pdf.join(other=capdf)
 
-    allocation_df = allocate_df(control_df=ctl_df, control_fields=control_fields + [control_seg_attr],
-                                suit_df=p_cap, suit_df_cap_fields=cap_fields,
-                                suit_df_seg_field=seg_field, suit_field=suit_field)
+    # allocation_df = allocate_df(control_df=ctl_df, control_fields=control_fields + [control_seg_attr],
+    #                             suit_df=p_cap, suit_df_cap_fields=cap_fields,
+    #                             suit_df_seg_field=seg_field, suit_field=suit_field)
 
-    # allocation_dict = allocate_dict(
-    #     suit_df=p_cap,
-    #     suit_id_field=id_field,
-    #     suit_field=suit_field,
-    #     suit_df_seg_field=seg_field,
-    #     suit_cap_fields=cap_fields,
-    #     control_dict=ctl_dict,
-    # )
-    out_array = np.array(np.rec.fromrecords(allocation_df.values))
-    names = allocation_df.dtypes.index.tolist()
+    allocation_dict = allocate_dict(
+        suit_df=p_cap,
+        suit_id_field=id_field,
+        suit_field=suit_field,
+        suit_df_seg_field=seg_field,
+        suit_cap_fields=cap_fields,
+        control_dict=ctl_dict,
+    )
+    out_array = np.array(np.rec.fromrecords(allocation_dict.values))
+    names = allocation_dict.dtypes.index.tolist()
     out_array.dtype.names = tuple(names)
     arcpy.da.NumPyArrayToTable(out_array,
                                r'K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb\allocation')
-    print(allocation.head())
+    print(allocation_dict.head())

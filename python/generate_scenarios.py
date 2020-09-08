@@ -305,6 +305,11 @@ imp_field = "Length"
 cost = "1320"
 restrictions = None
 
+# Control variables
+control_tbl = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv"
+control_fields = ['Ind', 'Ret', 'MF', 'SF', 'Off', 'Hot']
+control_seg_attr = "segment"
+
 # %% DERIVED INPUTS/SPECS
 par_est_fields = genFieldList("Par")  # Parcel estimates of existing floor area
 new_dev_fields = genFieldList("New")  # New dev pts estimates of existing floor area
@@ -321,8 +326,8 @@ basecap_fields = genFieldList("BCap",
 totcap_fields = genFieldList("TotCap", include_untracked=False)  # Total capacity, blended from TOD and non-TOD
 chgcap_fields = genFieldList("ChgCap", include_untracked=False) # Capacity for change (total capacity minus existing)
 ####
-expec_fields = genFieldList("Expec")
-filled_fields = genFieldList("Fill")
+alloc_fields = genFieldList("Alloc")
+
 
 # %% PROCESS
 try:
@@ -656,6 +661,28 @@ try:
             arcpy.da.TableToNumPyArray(in_table=capacity_table, field_names=cap_flds, null_value=0.0)
         ).set_index(keys=id_field)
         p_cap = pdf.join(other=capdf)
+
+        # read control table to dictionary
+        control_fields = ['Ind', 'Ret', 'MF', 'SF', 'Off', 'Hot']
+        control_seg_attr = "segment"
+        ctl_df = pd.read_csv(
+            control_tbl,
+            usecols=control_fields + [control_seg_attr]).set_index(control_seg_attr)
+        ctl_dict = ctl_df.T.to_dict()
+        allocation_dict = allocate_dict(
+            suit_df=p_cap,
+            suit_id_field=id_field,
+            suit_field='tot_suit',
+            suit_df_seg_field=seg_id_field,
+            suit_cap_fields=chgcap_fields,
+            control_dict=ctl_dict,
+        )
+        # write out allocation table
+        allocation_tbl = path.join(scen_gdb, 'allocation')
+        out_array = np.array(np.rec.fromrecords(allocation_dict.values))
+        names = allocation_dict.dtypes.index.tolist()
+        out_array.dtype.names = tuple(names)
+        arcpy.da.NumPyArrayToTable(out_array, allocation_tbl)
 
         print ""
 
