@@ -675,9 +675,9 @@ try:
             suit_cap_fields=chgcap_fields,
             control_dict=ctl_dict,
         )
-        # generate QA summaries
-        cap_summaries = p_cap[p_flds + chgcap_fields].groupby(seg_id_field).sum
-        seg_allocation_sums = allocation_dict.groupby(seg_id_field).sums()
+        # # generate QA summaries
+        # cap_summaries = p_cap[p_flds + chgcap_fields].groupby(seg_id_field).sum()
+        # seg_allocation_sums = allocation_dict.groupby(seg_id_field).sum()
 
         # write out allocation table
         allocation_tbl = path.join(scen_gdb, 'allocation')
