@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2020-09-14T19:41:40.454Z" agent="5.0 (Windows)" etag="Cjb__H6YkUt_T3yc_BEW" version="13.6.10" type="github" pages="9">
+<mxfile host="app.diagrams.net" modified="2020-09-14T19:53:02.559Z" agent="5.0 (Windows)" etag="xT02wRfJgAR9Q9MJHGvf" version="13.6.10" type="github" pages="9">
   <diagram id="6sfjvH8wAe0XbjZtv5F1" name="Relationships">
     <mxGraphModel dx="1896" dy="1108" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -339,77 +339,80 @@
     </mxGraphModel>
   </diagram>
   <diagram name="buildings_with_floors" id="EVJ-OiCdpVGNEP5nBKsl">
-    <mxGraphModel dx="1896" dy="1108" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1580" dy="923" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="_wvSJb4-IaPwt58LggdX-0" />
         <mxCell id="_wvSJb4-IaPwt58LggdX-1" parent="_wvSJb4-IaPwt58LggdX-0" />
         <mxCell id="_wvSJb4-IaPwt58LggdX-2" value="Buildings_with_floors" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-1">
-          <mxGeometry x="460" y="25" width="250" height="250" as="geometry">
+          <mxGeometry x="460" y="25" width="260" height="250" as="geometry">
             <mxRectangle x="120" y="120" width="160" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-3" value="" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-2">
-          <mxGeometry y="30" width="250" height="30" as="geometry" />
+          <mxGeometry y="30" width="260" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-4" value="PK" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-3">
           <mxGeometry width="30" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-5" value="OBJECTID int NOT NULL " style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-3">
-          <mxGeometry x="30" width="220" height="30" as="geometry" />
+          <mxGeometry x="30" width="230" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-6" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-2">
-          <mxGeometry y="60" width="250" height="30" as="geometry" />
+          <mxGeometry y="60" width="260" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-7" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-6">
           <mxGeometry width="30" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-8" value="Shape geometry NOT NULL" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-6">
-          <mxGeometry x="30" width="220" height="30" as="geometry" />
+          <mxGeometry x="30" width="230" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-9" value="" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-2">
-          <mxGeometry y="90" width="250" height="30" as="geometry" />
+          <mxGeometry y="90" width="260" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-10" value="" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-9">
           <mxGeometry width="30" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="_wvSJb4-IaPwt58LggdX-11" value="Height float" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontColor=#009900;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-9">
-          <mxGeometry x="30" width="220" height="30" as="geometry" />
+        <mxCell id="_wvSJb4-IaPwt58LggdX-11" value="Height float [estimated height (meters)]" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontColor=#009900;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-9">
+          <mxGeometry x="30" width="230" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-12" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-2">
-          <mxGeometry y="120" width="250" height="30" as="geometry" />
+          <mxGeometry y="120" width="260" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-13" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-12">
           <mxGeometry width="30" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="_wvSJb4-IaPwt58LggdX-14" value="fl_ar_sq float" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontColor=#009900;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-12">
-          <mxGeometry x="30" width="220" height="30" as="geometry" />
+        <mxCell id="_wvSJb4-IaPwt58LggdX-14" value="fl_ar_sq float [estimated floor area (sq ft)]" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontColor=#009900;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-12">
+          <mxGeometry x="30" width="230" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-15" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-2">
-          <mxGeometry y="150" width="250" height="30" as="geometry" />
+          <mxGeometry y="150" width="260" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-16" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-15">
           <mxGeometry width="30" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="_wvSJb4-IaPwt58LggdX-17" value="fl_est float" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontColor=#009900;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-15">
-          <mxGeometry x="30" width="220" height="30" as="geometry" />
+        <mxCell id="_wvSJb4-IaPwt58LggdX-17" value="fl_est float [estimated number of floors]" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontColor=#009900;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-15">
+          <mxGeometry x="30" width="230" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-18" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-2">
-          <mxGeometry y="180" width="250" height="30" as="geometry" />
+          <mxGeometry y="180" width="260" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-19" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-18">
           <mxGeometry width="30" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-20" value="Shape_Length float NOT NULL" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-18">
-          <mxGeometry x="30" width="220" height="30" as="geometry" />
+          <mxGeometry x="30" width="230" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-21" style="shape=partialRectangle;collapsible=0;dropTarget=0;pointerEvents=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-2">
-          <mxGeometry y="210" width="250" height="30" as="geometry" />
+          <mxGeometry y="210" width="260" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-22" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-21">
           <mxGeometry width="30" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_wvSJb4-IaPwt58LggdX-23" value="Shape_Area float NOT NULL" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-21">
-          <mxGeometry x="30" width="220" height="30" as="geometry" />
+          <mxGeometry x="30" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QDibF5cg32Nj2MUMGe-Z-0" value="&lt;h1&gt;BUILDING DATA&lt;br&gt;&lt;/h1&gt;&lt;p&gt;Where are existing buildings located, what parcel does each building belong to, and what is the approximate floor area of each building?&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Source: Microsoft building footprints&lt;/li&gt;&lt;ul&gt;&lt;li&gt;Publisher: Microsoft&lt;/li&gt;&lt;li&gt;Publication date: 2018&lt;/li&gt;&lt;li&gt;URL: ...&lt;/li&gt;&lt;/ul&gt;&lt;li&gt;Notes:&lt;/li&gt;&lt;ul&gt;&lt;li&gt;For buildings in major metropolitan regions, the building footprint features include an attribute reflecting estimated height (in meters) based on LIDAR data . For all parcels in Dorchester County, this height estimate is unavailable.&lt;/li&gt;&lt;/ul&gt;&lt;/ul&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;h2&gt;Data Enrichment&lt;/h2&gt;&lt;h3&gt;Estimating number of floors&lt;/h3&gt;&lt;div&gt;...&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;h3&gt;Estimating total floor area&lt;/h3&gt;&lt;div&gt;...&lt;br&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;labelBackgroundColor=#ffffff;fontColor=#000000;" vertex="1" parent="_wvSJb4-IaPwt58LggdX-1">
+          <mxGeometry x="60" y="30" width="370" height="470" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
