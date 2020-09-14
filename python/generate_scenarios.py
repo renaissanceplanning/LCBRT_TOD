@@ -180,7 +180,7 @@ class LicenseError(Exception):
     pass
 
 
-def genFieldList(suffix, include_untracked=True):
+def genFieldList(suffix, measure='SF', include_untracked=True):
     """
     Generates a list of fields based on use groupings with the form:
     `{UseGroup}_SF_{suffix}`, recording the square footage (SF) for each
@@ -188,9 +188,9 @@ def genFieldList(suffix, include_untracked=True):
     """
     global USES, UNTRACKED
     if include_untracked:
-        return ["{}_SF_{}".format(use, suffix) for use in USES]
+        return ["{}_{}_{}".format(use, measure, suffix) for use in USES]
     else:
-        return ["{}_SF_{}".format(use, suffix) for use in USES if use not in UNTRACKED]
+        return ["{}_{}_{}".format(use, measure, suffix) for use in USES if use not in UNTRACKED]
 
 
 def makeFieldRefDict(in_dict, suffix):
@@ -325,8 +325,13 @@ basecap_fields = genFieldList("BCap",
                               include_untracked=False)  # Build-out capacity for non-TOD parcels (from expected LU and FAR)
 totcap_fields = genFieldList("TotCap", include_untracked=False)  # Total capacity, blended from TOD and non-TOD
 chgcap_fields = genFieldList("ChgCap", include_untracked=False) # Capacity for change (total capacity minus existing)
-####
-alloc_fields = genFieldList("Alloc")
+
+# allocation field
+alloc_fields = genFieldList("Alloc", include_untracked=False) # allocated sqft in 2040 based on suitability, capacity for change and control sqft anticipated
+# FAR conversions for AGOL
+far_expi_fields = genFieldList("ExPi", measure='FAR', include_untracked=False) # FAR for existing and pipeline
+far_alloc_fields = genFieldList("Alloc", measure='FAR', include_untracked=False) # FAR allocated
+far_totcap_fields = genFieldList('TotCap', measure='FAR', include_untracked=False) # FAR available overall (TOD/non-TOD)
 
 
 # %% PROCESS
@@ -667,7 +672,7 @@ try:
             control_tbl,
             usecols=control_fields + [control_seg_attr]).set_index(control_seg_attr)
         ctl_dict = ctl_df.T.to_dict()
-        allocation_dict = allocate_dict(
+        allocation_df = allocate_dict(
             suit_df=p_cap,
             suit_id_field=id_field,
             suit_field='tot_suit',
@@ -681,10 +686,12 @@ try:
 
         # write out allocation table
         allocation_tbl = path.join(scen_gdb, 'allocation')
-        out_array = np.array(np.rec.fromrecords(allocation_dict.values))
-        names = allocation_dict.dtypes.index.tolist()
+        out_array = np.array(np.rec.fromrecords(allocation_df.values))
+        names = allocation_df.dtypes.index.tolist()
         out_array.dtype.names = tuple(names)
         arcpy.da.NumPyArrayToTable(out_array, allocation_tbl)
+
+        # populate FAR by activity for visualization and summaries
 
         print ""
 
