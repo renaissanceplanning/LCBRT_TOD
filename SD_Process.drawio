@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2020-09-14T22:14:03.330Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36" etag="9yS6CP_OJ1mjgDRQLh8y" version="13.7.0" type="github">
+<mxfile host="app.diagrams.net" modified="2020-09-14T22:16:54.270Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36" etag="v55P96TEExohZwZ-Krfe" version="13.7.0" type="github">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
     <mxGraphModel dx="1185" dy="635" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -320,6 +320,9 @@
         <mxCell id="sAYLSgdPXj7yx2jMauLX-121" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="sAYLSgdPXj7yx2jMauLX-117" target="sAYLSgdPXj7yx2jMauLX-120">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="sAYLSgdPXj7yx2jMauLX-124" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="sAYLSgdPXj7yx2jMauLX-117" target="sAYLSgdPXj7yx2jMauLX-123">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="sAYLSgdPXj7yx2jMauLX-117" value="Development Area" style="rhombus;whiteSpace=wrap;html=1;labelBackgroundColor=#ffffff;align=center;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="87.5" y="2890" width="175" height="150" as="geometry" />
         </mxCell>
@@ -337,8 +340,14 @@
         <mxCell id="sAYLSgdPXj7yx2jMauLX-120" value="Parcels that have been tagged as development sites have their areas extracted and summed." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;labelBackgroundColor=#ffffff;labelBorderColor=#000000;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="465" y="2920" width="230" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="sAYLSgdPXj7yx2jMauLX-123" value="Population" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;align=center;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+        <mxCell id="sAYLSgdPXj7yx2jMauLX-123" value="Redevelopment Area" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;align=center;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="120" y="3090" width="110" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="sAYLSgdPXj7yx2jMauLX-125" value="This Process is repeated for each station that is summarized and final results are presented in a spreadsheet" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;labelBackgroundColor=#ffffff;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="40" y="3270" width="760" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="sAYLSgdPXj7yx2jMauLX-126" value="&lt;h1&gt;Key&lt;/h1&gt;&lt;p&gt;Rounded rectangles are data sets, either inputs or derived.&lt;/p&gt;&lt;p&gt;Diamonds are processes in the script&lt;/p&gt;&lt;p&gt;Circles are output fields in the final spreadsheet&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;labelBackgroundColor=#ffffff;align=left;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="460" y="3070" width="330" height="120" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
