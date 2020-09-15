@@ -13,7 +13,12 @@ UNTRACKED = ["Oth"]
 USES = RES + NRES + HOTEL + UNTRACKED
 
 # share values
-shares = {"SF": 1800, "MF": 1200, "Ret": 500, "Ind": 800, "Off": 400, "Hot": 500}
+shares = {"SF": 1800,
+          "MF": 1200,
+          "Ret": 500,
+          "Ind": 800,
+          "Off": 400,
+          "Hot": 500}
 
 
 # support function
@@ -35,9 +40,9 @@ def genFieldList(suffix, measure="SF", include_untracked=True):
 
 
 # workspaces
-scenario_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\WE_Sum\WE_Sum_scenario.gdb"
+scenario_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\WE_Fair\WE_Fair_scenario.gdb"
 source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb"
-summary_wkspc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\WE_Sum"
+summary_wkspc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\WE_Fair"
 
 # datasets
 parcels = path.join(scenario_gdb, "parcels")

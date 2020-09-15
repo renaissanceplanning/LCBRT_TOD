@@ -45,7 +45,8 @@ ANALYSIS SPECS:
 STANDARD INPUTS:
   - `parcels`: Parcel features
       - `id_field`: unique id for each parcel
-      - `par_sqft_field`: estimated building area
+      - `par_bld_sqft_field`: estimated building area
+      - 'par_sqft_field': estimate FAR
       - `lu_field`: current land use
       - `par_est_fld_ref`: Dictionary with keys listing expected (relevant)
         categories in `lu_field` and values that relate each category to a use in 
@@ -253,7 +254,8 @@ par_est_fld_ref = {
     "Hospitality": "Hot",
     "Other": "Oth"
 }
-par_sqft_field = "BldSqFt"
+par_bld_sqft_field = "BldSqFt"
+par_sqft_field = "Sq_Feet"
 is_do_field = "DO_Site"
 do_prop_field = "DOSProp"
 acres_field = "Area_AC"
@@ -426,7 +428,7 @@ try:
         print "Appending existing activity data to parcel features based on parcel attributes"
         _par_est_fld_ref = makeFieldRefDict(par_est_fld_ref, "Par")
         sqFtByLu(in_fc=suit_fc,
-                 sqft_field=par_sqft_field,
+                 sqft_field=par_bld_sqft_field,
                  lu_field=lu_field,
                  lu_field_ref=_par_est_fld_ref,
                  where_clause=None)
@@ -680,18 +682,26 @@ try:
             suit_cap_fields=chgcap_fields,
             control_dict=ctl_dict,
         )
-        # # generate QA summaries
-        # cap_summaries = p_cap[p_flds + chgcap_fields].groupby(seg_id_field).sum()
-        # seg_allocation_sums = allocation_dict.groupby(seg_id_field).sum()
 
-        # write out allocation table
-        allocation_tbl = path.join(scen_gdb, 'allocation')
-        out_array = np.array(np.rec.fromrecords(allocation_df.values))
-        names = allocation_df.dtypes.index.tolist()
-        out_array.dtype.names = tuple(names)
-        arcpy.da.NumPyArrayToTable(out_array, allocation_tbl)
+        # write out to parcels
+        extendTableDf(in_table=suit_fc, table_match_field=parcel_id,
+                      df=allocation_df, df_match_field=parcel_id)
 
         # populate FAR by activity for visualization and summaries
+        # far = activity_sqft/parcel_sqft
+        FAR_phases = [(alloc_fields, far_alloc_fields),
+                      (expi_fields, far_expi_fields),
+                      (totcap_fields, far_totcap_fields)]
+        for phase in FAR_phases:
+            for sqft_fields, far_fields in phase:
+                for sqft, far in zip(sqft_fields, far_fields):
+                    arcpy.AddField_management(in_table=suit_fc, field_name=far, field_type="DOUBLE")
+                    with arcpy.da.UpdateCursor(
+                            suit_fc, [sqft, far, par_sqft_field]) as c:
+                        for r in c:
+                            sf, fa, psqft = r
+                            r[1] = sf/psqft
+                            c.updateRow(r)
 
         print ""
 
