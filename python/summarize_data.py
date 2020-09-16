@@ -13,12 +13,7 @@ UNTRACKED = ["Oth"]
 USES = RES + NRES + HOTEL + UNTRACKED
 
 # share values
-shares = {"SF": 1800,
-          "MF": 1200,
-          "Ret": 500,
-          "Ind": 800,
-          "Off": 400,
-          "Hot": 500}
+shares = {"SF": 1800, "MF": 1200, "Ret": 500, "Ind": 800, "Off": 400, "Hot": 500}
 
 
 # support function
@@ -44,11 +39,16 @@ scenario_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\WE_F
 source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb"
 summary_wkspc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\WE_Fair"
 
+# field lists
+expi_flds = genFieldList(suffix="ExPi", include_untracked=False)
+totcap_flds = genFieldList(suffix="TotCap", include_untracked=False)
+alloc_flds = genFieldList(suffix="alloc", include_untracked=False)
+buildout_flds = genFieldList(suffix="2040", include_untracked=False)
+
 # datasets
 parcels = path.join(scenario_gdb, "parcels")
 pid = "ParclID"
-expi_flds = genFieldList(suffix="ExPi", include_untracked=False)
-p_fields = [pid] + expi_flds
+p_fields = [pid, "seg_num"] + expi_flds + totcap_flds + alloc_flds
 
 taz = path.join(source_gdb, "corridor_segments_byTAZ")
 tid = "Big_TAZ"
@@ -56,17 +56,7 @@ tid = "Big_TAZ"
 segments = path.join(source_gdb, "corridor_segments")
 sid = "SegmentNum"
 
-capacities = path.join(scenario_gdb, "capacity")
-cid = pid
-totcap_flds = genFieldList(suffix="TotCap", include_untracked=False)
-c_fields = [cid] + totcap_flds
 
-allocation = path.join(scenario_gdb, "allocation")
-aid = pid
-alloc_flds = genFieldList(suffix="alloc", include_untracked=False)
-a_fields = [aid, "seg_num"] + alloc_flds
-
-buildout_flds = genFieldList(suffix="2040", include_untracked=False)
 """
 work to do:
 1) sj parcels to TAZ to get TAZID with parcel
@@ -90,20 +80,8 @@ p_df = pd.DataFrame(
         in_table=pwTAZ, field_names=p_fields + [tid], null_value=0.0
     )
 ).set_index(pid)
-cap_df = pd.DataFrame(
-    arcpy.da.TableToNumPyArray(
-        in_table=capacities, field_names=c_fields, null_value=0.0
-    )
-).set_index(cid)
-alloc_df = pd.DataFrame(
-    arcpy.da.TableToNumPyArray(
-        in_table=allocation, field_names=a_fields, null_value=0.0
-    )
-).set_index(aid)
 
-# join all tables together and summarize
-joined = (p_df.join(cap_df)).join(alloc_df)
-seg_summaries = joined.groupby("seg_num").sum()
+seg_summaries = p_df.groupby("seg_num").sum()
 seg_summaries.drop(tid, axis=1, inplace=True)
 for expi_fld, alloc_fld, buildout_fld in zip(expi_flds, alloc_flds, buildout_flds):
     seg_summaries[buildout_fld] = seg_summaries[expi_fld] + seg_summaries[alloc_fld]
@@ -118,7 +96,7 @@ seg_summaries["JOBS"] = (
     + (seg_summaries[buildout_flds[5]] / shares["Hot"])
 )
 
-taz_summaries = joined.groupby(tid).sum()
+taz_summaries = p_df.groupby(tid).sum()
 taz_summaries.drop("seg_num", axis=1, inplace=True)
 for expi_fld, alloc_fld, buildout_fld in zip(expi_flds, alloc_flds, buildout_flds):
     taz_summaries[buildout_fld] = taz_summaries[expi_fld] + taz_summaries[alloc_fld]

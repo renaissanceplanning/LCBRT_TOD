@@ -17,12 +17,12 @@ for segment in segments:
 
 
 def allocate_dict(
-        suit_df,
-        suit_id_field,
-        suit_field,
-        suit_df_seg_field,
-        suit_cap_fields,
-        control_dict,
+    suit_df,
+    suit_id_field,
+    suit_field,
+    suit_df_seg_field,
+    suit_cap_fields,
+    control_dict,
 ):
     # sort data by segment and suitability descending
     suit_df.sort_values(
@@ -42,10 +42,11 @@ def allocate_dict(
     # loop over segments and create control dictionary
     for segment, group in suit_df.groupby(suit_df_seg_field):
         seg_controls = control_dict[segment]
-
+        print "Calculating allocation for segment --> {}".format(segment)
+        print "...segment controls start: {}".format(seg_controls)
         # iterate over parcel rows
         for parcel_id, row in group.iterrows():
-            new_row = {}
+            new_row = {suit_df_seg_field: segment}
             parcel_count = dict(
                 {
                     "SF": row[sfr_sqft_cap],
@@ -58,34 +59,46 @@ def allocate_dict(
             )
             for act_key in parcel_count.keys():
                 alloc_att = "{}_SF_{}".format(act_key, "alloc")
-                segment_act_control = seg_controls[act_key]  # get segment activity control val
-                parcel_act_cap = parcel_count[act_key]  # get parcel activity capacity val (ie fill_to_val)
-                updated_act_control = (segment_act_control - parcel_act_cap)  # calculate updated control
+                segment_act_control = seg_controls[
+                    act_key
+                ]  # get segment activity control val
+                parcel_act_cap = parcel_count[
+                    act_key
+                ]  # get parcel activity capacity val (ie fill_to_val)
+                updated_act_control = (
+                    segment_act_control - parcel_act_cap
+                )  # calculate updated control
                 # if new control  is negative, reset activity control and parcel allocations
                 dist = 0.0
                 if updated_act_control < 0:
                     dist = updated_act_control * -1
                     updated_act_control += dist
                     parcel_act_cap -= dist
-                seg_controls[act_key] = updated_act_control  # update activity control to reflect allocation
-                new_row[suit_df_seg_field] = segment
+                seg_controls[
+                    act_key
+                ] = updated_act_control  # update activity control to reflect allocation
                 new_row[alloc_att] = parcel_act_cap
-                filled_rows[parcel_id] = new_row
 
-                if all(value == 0 for value in seg_controls.values()):
-                    break
-    filled_df = pd.DataFrame(filled_rows).T.reset_index().rename(columns={"index": suit_id_field})
+            # add new row to filled dict
+            filled_rows[parcel_id] = new_row
+        print "...segment controls end: {}".format(seg_controls)
 
+    filled_df = (
+        pd.DataFrame(filled_rows)
+        .T.reset_index()
+        .rename(columns={"index": suit_id_field})
+        .drop(suit_df_seg_field, axis=1)
+    )
     return filled_df
 
 
 def allocate_df(
-        control_df,
-        control_fields,
-        suit_df,
-        suit_df_cap_fields,
-        suit_df_seg_field,
-        suit_field,
+    control_df,
+    control_fields,
+    suit_df,
+    suit_df_cap_fields,
+    suit_df_seg_field,
+    suit_field,
 ):
     """
 
@@ -177,7 +190,7 @@ def allocate_df(
         alloc_cols.append(seg_alloc_col)
 
     result = pd.concat(alloc_cols, axis=1)
-    #TODO: sort out why result is 3x bigger than suit_df_sorted
+    # TODO: sort out why result is 3x bigger than suit_df_sorted
     combo = pd.concat([suit_df_sorted, result], axis=1)
     return combo
 
@@ -186,8 +199,10 @@ if __name__ == "__main__":
     # suitability polygon inputs
     # processed elements
     parcel_fc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb\parcels"
-    capacity_tbl = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb" \
-                   r"\capacity "
+    capacity_tbl = (
+        r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb"
+        r"\capacity "
+    )
     id_field = "ParclID"
     seg_field = "seg_num"
     suit_field = "tot_suit"
@@ -204,11 +219,11 @@ if __name__ == "__main__":
     control_tbl = (
         r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv"
     )
-    control_fields = ['Ind', 'Ret', 'MF', 'SF', 'Off', 'Hot']
+    control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
     control_seg_attr = "segment"
     ctl_df = pd.read_csv(
-        control_tbl,
-        usecols=control_fields + [control_seg_attr]).set_index(control_seg_attr)
+        control_tbl, usecols=control_fields + [control_seg_attr]
+    ).set_index(control_seg_attr)
     ctl_dict = ctl_df.T.to_dict()
     # make df to insert
     p_flds = [id_field, seg_field, suit_field]
@@ -240,6 +255,8 @@ if __name__ == "__main__":
     out_array = np.array(np.rec.fromrecords(allocation_dict.values))
     names = allocation_dict.dtypes.index.tolist()
     out_array.dtype.names = tuple(names)
-    arcpy.da.NumPyArrayToTable(out_array,
-                               r'K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb\allocation')
+    arcpy.da.NumPyArrayToTable(
+        out_array,
+        r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\allocation.csv",
+    )
     print(allocation_dict.head())
