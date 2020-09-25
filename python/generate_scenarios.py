@@ -937,6 +937,7 @@ try:
                 + (seg_summaries[build_fields[3]] / activity_sf_factors["Ind"])
                 + (seg_summaries[build_fields[4]] / activity_sf_factors["Off"])
         )  # + (seg_summaries[build_fields[5]] / activity_sf_factors["Hot"])
+        seg_summaries.reset_index(inplace=True)
 
         # taz summary
         taz_summaries = p_df.groupby(tid).sum()
@@ -950,7 +951,8 @@ try:
                 + (taz_summaries[build_fields[3]] / activity_sf_factors["Ind"])
                 + (taz_summaries[build_fields[4]] / activity_sf_factors["Off"])
         )  # + (taz_summaries[buildout_flds[5]] / shares['Hot'])
-        taz_summaries.set_index(key=tid)
+        taz_summaries.reset_index(inplace=True)
+
         # write out tables
         taz_summaries.to_csv(path.join(scen_ws, "taz_summary.csv"))
         seg_summaries.to_csv(path.join(scen_ws, "seg_summary.csv"))
@@ -966,9 +968,14 @@ try:
         )
         # update RES and JOBS to reflect proportion of full TAZ
         arcpy.CalculateField_management(in_table=taz, field='RES',
-                                        expression="!RES! * !Share!", expression_type="PYTHON_9.3")
+                                        expression="!RES_build! * !Share!", expression_type="PYTHON_9.3")
         arcpy.CalculateField_management(in_table=taz, field='JOBS',
-                                        expression="!JOBS! * !Share!", expression_type="PYTHON_9.3")
+                                        expression="!JOBS_build! * !Share!", expression_type="PYTHON_9.3")
+        # calculate difference from current CoG estimates
+        arcpy.CalculateField_management(in_table=taz, field="RES_diff", expression="!RES_build! - !LCRT_H40!", 
+                                        expression_type="PYTHON_9.3", field_type="DOUBLE")
+        arcpy.CalculateField_management(in_table=taz, field="JOBS_diff", expression="!JOBS_build! - !LCRT_E40!", 
+                                        expression_type="PYTHON_9.3", field_type="DOUBLE")
         print "DONE!"
 
 
