@@ -967,15 +967,21 @@ try:
             append_only=False,
         )
         # update RES and JOBS to reflect proportion of full TAZ
-        arcpy.CalculateField_management(in_table=taz, field='RES',
-                                        expression="!RES_build! * !Share!", expression_type="PYTHON_9.3")
-        arcpy.CalculateField_management(in_table=taz, field='JOBS',
-                                        expression="!JOBS_build! * !Share!", expression_type="PYTHON_9.3")
+        arcpy.CalculateField_management(in_table=taz, field='RES_build',
+                                        expression="!RES_build! * !Share!",
+                                        expression_type="PYTHON_9.3")
+        arcpy.CalculateField_management(in_table=taz, field='JOBS_build',
+                                        expression="!JOBS_build! * !Share!",
+                                        expression_type="PYTHON_9.3")
         # calculate difference from current CoG estimates
-        arcpy.CalculateField_management(in_table=taz, field="RES_diff", expression="!RES_build! - !LCRT_H40!", 
-                                        expression_type="PYTHON_9.3", field_type="DOUBLE")
-        arcpy.CalculateField_management(in_table=taz, field="JOBS_diff", expression="!JOBS_build! - !LCRT_E40!", 
-                                        expression_type="PYTHON_9.3", field_type="DOUBLE")
+        arcpy.AddField_management(in_table=taz, field_name="RES_diff", field_type="DOUBLE")
+        arcpy.AddField_management(in_table=taz, field_name="JOBS_diff", field_type="DOUBLE")
+        arcpy.CalculateField_management(in_table=taz, field="RES_diff",
+                                        expression="!RES_build! - !LCRT_H40!",
+                                        expression_type="PYTHON_9.3")
+        arcpy.CalculateField_management(in_table=taz, field="JOBS_diff",
+                                        expression="!JOBS_build! - !LCRT_E40!",
+                                        expression_type="PYTHON_9.3")
         print "DONE!"
 
 
