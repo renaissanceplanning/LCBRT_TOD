@@ -57,21 +57,17 @@ segments = path.join(source_gdb, "corridor_segments")
 sid = "SegmentNum"
 
 
-# pth, gdb = path.split(summary_gdb)
-# if arcpy.Exists(summary_gdb):
-#     arcpy.Delete_management(in_data=summary_gdb)
-#
-# arcpy.CreateFileGDB_management(out_folder_path=path, out_name=gdb)
 
 def generate_summaries(suit_fc, suit_id, suit_fields, taz_fc, taz_id, seg_id)
     # setup field lists
     expi_flds = genFieldList(suffix="ExPi", include_untracked=False)
     totcap_flds = genFieldList(suffix="TotCap", include_untracked=False)
     alloc_flds = genFieldList(suffix="alloc", include_untracked=False)
-    buildout_flds = genFieldList(suffix="2040", include_untracked=False)
+    buildout_flds = genFieldList(suffix="build", include_untracked=False)
     
     pwTAZ = arcpy.SpatialJoin_analysis(
-        suti_fc, taz_fc, "in_memory\parcels_wTAZ", match_option="INTERSECT"
+        target_features=suit_fc, join_features=taz_fc,
+        out_feature_class="in_memory\parcels_wTAZ", match_option="INTERSECT"
     )
 
     p_df = pd.DataFrame(
