@@ -1,7 +1,6 @@
 """
 #TODO: clean up all data inputs for an authoritative source gdb
 #TODO: handle segment-level control totals and document vars here
-#TODO: add fields to report total floor area for each parcel for each time frame
 #TODO: report FAR, units per acre, lu mix by station area, segment (this might be just as easily done in a dashboard)
 #TODO: station area typology spreadsheet ingestion tool (might be a separate tool?)
 
@@ -131,9 +130,17 @@ The key steps in the scenario generation process are outlined below:
             TODO: make this a little smarter by using the USES global lists?
          - Apply floor area assumptions
       - Adjust build-out targets for each parcel based on existing + pipeline floor area
-      - TODO: Blend TOD build out capacity with non-TOD build-out capacity
-      - TODO: Subtract existing floor area from build-out capacity to estimate change capacity
-      - TODO: Run allocation by segment
+      - Blend TOD build out capacity with non-TOD build-out capacity
+      - Subtract existing floor area from build-out capacity to estimate change capacity
+      - Run allocation by segment
+      - Populate attributes valuable for story telling and visualization
+        - Buildout activity (EXPI + ALLOC)
+        - EXPI, ALLOC and BUILDOUT activity sum by parcel
+        - FAR value by Activity for each phase (EXPI, ALLOC, BUILDOUT)
+        - weighted station area FAR for Dashboard indicator
+      - Generate Segment and TAZ level summaries of JOBS and HOUSING Units (EMP, RES)
+        - append summaries to segment and taz
+        - generate difference between RP buildout and COG buildout numbers
 """
 
 # %% IMPORTS
@@ -154,7 +161,7 @@ import numpy as np
 
 # %% WORKSPACES AND SCENARIO NAMES.
 source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb"
-scenarios_ws = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios"
+scenarios_ws = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios_v2"
 scenarios = ["WE_Sum", "WE_Fair"]
 arcpy.env.overwriteOutput = True
 
@@ -179,6 +186,14 @@ weights = {
     "dev_size": 0.1,
 }
 
+activity_sf_factors = {
+    "SF": 1800,
+    "MF": 1200,
+    "Ret": 500,
+    "Ind": 800,
+    "Off": 400,
+    "Hot": 500,
+}
 
 # %% HELPER FUNCTIONS AND CLASSES
 class LicenseError(Exception):
@@ -247,7 +262,6 @@ def makeTargetFieldsDict(tgt_fields):
 
 # %% INPUT DATA SETS
 # Parcels
-# parcels = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\Parcels.shp"
 parcels = "parcels"
 parcels = path.join(source_gdb, parcels)
 id_field = "ParclID"
@@ -317,6 +331,10 @@ imp_field = "Length"
 cost = "1320"
 restrictions = None
 
+# TAZ
+taz = path.join(source_gdb, "TAZ_LCRT_SBF08122020v2")
+tid = "Big_TAZ"
+
 # Control variables
 control_tbl = (
     r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv"
@@ -330,42 +348,44 @@ new_dev_fields = genFieldList("New")  # New dev pts estimates of existing floor 
 ex_lu_fields = genFieldList(
     "Ex"
 )  # Estimates of existing floor are (parcel-based + new-dev)
-pipe_fields = genFieldList("Pipe")  # Pipeline floor area
-expi_fields = genFieldList("ExPi")  # Existing + pipeline floor area
+pipe_fields = genFieldList(suffix="Pipe")  # Pipeline floor area
+expi_fields = genFieldList(suffix="ExPi")  # Existing + pipeline floor area
 tgt_sf_fields = genFieldList(
-    "Tgt", include_untracked=False
+    suffix="Tgt", include_untracked=False
 )  # Target floor area (from TOD template application)
 tgt_sf_field_dict = makeTargetFieldsDict(
     tgt_sf_fields
 )  # Dictionary for conversion of TOD template activities to floor area
 adj_fields = genFieldList(
-    "Adj", include_untracked=False
+    suffix="Adj", include_untracked=False
 )  # Adjusted floor area targets (TOD templates adjusted based on expi)
 basecap_fields = genFieldList(
-    "BCap", include_untracked=False
+    suffix="BCap", include_untracked=False
 )  # Build-out capacity for non-TOD parcels (from expected LU and FAR)
 totcap_fields = genFieldList(
-    "TotCap", include_untracked=False
+    suffix="TotCap", include_untracked=False
 )  # Total capacity, blended from TOD and non-TOD
 chgcap_fields = genFieldList(
-    "ChgCap", include_untracked=False
+    suffix="ChgCap", include_untracked=False
 )  # Capacity for change (total capacity minus existing)
 
-# allocation field
+# allocation fields
 alloc_fields = genFieldList(
-    "Alloc", include_untracked=False
-)  # allocated sqft in 2040 based on suitability, capacity for change and control sqft anticipated
+    suffix="Alloc", include_untracked=False
+)  # allocated sqft in at buildout based on suitability, capacity for change and control sqft anticipated
+# buildout fields
+build_fields = genFieldList(suffix="Build", include_untracked=False)
+
 # FAR conversions for AGOL
 far_expi_fields = genFieldList(
-    "ExPi", measure="FAR", include_untracked=False
+    suffix="ExPi", measure="FAR", include_untracked=False
 )  # FAR for existing and pipeline
 far_alloc_fields = genFieldList(
-    "Alloc", measure="FAR", include_untracked=False
+    suffix="Alloc", measure="FAR", include_untracked=False
 )  # FAR allocated
-far_totcap_fields = genFieldList(
-    "TotCap", measure="FAR", include_untracked=False
+far_build_fields = genFieldList(
+    suffix="build", measure="FAR", include_untracked=False
 )  # FAR available overall (TOD/non-TOD)
-
 
 # %% PROCESS
 try:
@@ -380,8 +400,8 @@ try:
 
     # create scenario folder if not already there
     if not arcpy.Exists(scenarios_ws):
-        path, name = path.split(scenarios_ws)
-        arcpy.CreateFolder_management(out_folder_path=path, out_name=name)
+        pth, name = path.split(scenarios_ws)
+        arcpy.CreateFolder_management(out_folder_path=pth, out_name=name)
     # Run each scenario
     for scenario in scenarios:
         # Create the scenario workspace folder if needed
@@ -532,11 +552,11 @@ try:
         # -- Calculate fields
         print "...Calculating existing (parcel-based + new development)"
         for ex_lu_field, par_est_field, new_dev_field in zip(
-            ex_lu_fields, par_est_fields, new_dev_fields
+                ex_lu_fields, par_est_fields, new_dev_fields
         ):
             arcpy.AddField_management(suit_fc, ex_lu_field, "LONG")
             with arcpy.da.UpdateCursor(
-                suit_fc, [par_est_field, new_dev_field, ex_lu_field]
+                    suit_fc, [par_est_field, new_dev_field, ex_lu_field]
             ) as c:
                 for r in c:
                     par_val, new_dev_val, ex_lu_val = r
@@ -548,11 +568,11 @@ try:
 
         print "...Calculating existing + pipeline"
         for ex_lu_field, pipe_field, expi_field in zip(
-            ex_lu_fields, pipe_fields, expi_fields
+                ex_lu_fields, pipe_fields, expi_fields
         ):
             arcpy.AddField_management(suit_fc, expi_field, "LONG")
             with arcpy.da.UpdateCursor(
-                suit_fc, [ex_lu_field, pipe_field, expi_field]
+                    suit_fc, [ex_lu_field, pipe_field, expi_field]
             ) as c:
                 for r in c:
                     ex_val, pipe_val, expi_val = r
@@ -731,11 +751,11 @@ try:
         arcpy.da.ExtendTable(capacity_table, id_field, exist_array, id_field)
         # Add fields and update
         for ccap_field, tcap_field, ex_lu_field in zip(
-            chgcap_fields, totcap_fields, ex_lu_fields
+                chgcap_fields, totcap_fields, ex_lu_fields
         ):
             arcpy.AddField_management(capacity_table, ccap_field, "LONG")
             with arcpy.da.UpdateCursor(
-                capacity_table, [ccap_field, tcap_field, ex_lu_field]
+                    capacity_table, [ccap_field, tcap_field, ex_lu_field]
             ) as c:
                 for r in c:
                     ccap, tcap, ex = r
@@ -750,11 +770,11 @@ try:
                             r[0] = tcap - ex
                     c.updateRow(r)
         # Dump tot-capacity fields into suitabiltiy fc for FAR calcs
-        tcap_fields = [id_field] + totcap_fields
+        tcap_fields = [id_field] + totcap_fields + chgcap_fields
         cap_array = arcpy.da.TableToNumPyArray(
-            capacity_table, tcap_fields, null_value=0.0)
+            capacity_table, tcap_fields, null_value=0.0
+        )
         arcpy.da.ExtendTable(suit_fc, id_field, cap_array, id_field)
-
 
         # Run allocation
         print "Allocating square footage based on change capacity and segment level control totals"
@@ -789,13 +809,42 @@ try:
             df_match_field=id_field,
         )
 
+        # populate buildout totals for each activity
+        print "Calculating buildout sqft totals..."
+        for (
+                expi_field,
+                alloc_field,
+                build_field,
+        ) in zip(expi_fields, alloc_fields, build_fields):
+            arcpy.AddField_management(suit_fc, build_field, "LONG")
+            with arcpy.da.UpdateCursor(
+                    suit_fc, [expi_field, alloc_field, build_field]
+            ) as cur:
+                for row in cur:
+                    act_list = [val for val in row if val is not None]
+                    row[2] = sum(act_list)
+                    cur.updateRow(row)
+
+        # populate expi, alloc, and buildout parcel sum
+        print "Calculating summary square footage for developement phases.."
+        sum_sf_fields = ["ExPi_SF_sum", "Alloc_SF_sum", "Build_SF_sum"]
+        activity_fields = [expi_fields, alloc_fields, build_fields]
+        for summ, activities in zip(sum_sf_fields, activity_fields):
+            arcpy.AddField_management(in_table=suit_fc, field_name=summ, field_type="LONG")
+            print "\tAdding {} for each parcel...".format(summ)
+            with arcpy.da.UpdateCursor(in_table=suit_fc, field_names=[summ] + activities) as cur:
+                for row in cur:
+                    act_list = [val for val in row[1:] if val is not None]
+                    row[0] = sum(act_list)
+                    cur.updateRow(row)
+
         # populate FAR by activity for visualization and summaries
         # far = activity_sqft/parcel_sqft
-        print "Calculating FAR for each phase.."
+        print "Calculating FAR for each phase..."
         FAR_phases = [
             [alloc_fields, far_alloc_fields],
             [expi_fields, far_expi_fields],
-            [totcap_fields, far_totcap_fields],
+            [build_fields, far_build_fields],
         ]
         for phase in FAR_phases:
             for act_sqft_field, act_far_field in zip(phase[0], phase[1]):
@@ -803,46 +852,137 @@ try:
                     in_table=suit_fc, field_name=act_far_field, field_type="DOUBLE"
                 )
                 with arcpy.da.UpdateCursor(
-                    in_table=suit_fc, field_names=[act_sqft_field, act_far_field, par_sqft_field]
+                        in_table=suit_fc,
+                        field_names=[act_sqft_field, act_far_field, par_sqft_field],
                 ) as c:
                     for r in c:
                         act_sqft, act_far, par_psqft = r
+                        if act_sqft is None:
+                            act_sqft = 0
                         r[1] = act_sqft / par_psqft
                         c.updateRow(r)
 
-        # todo: dump out station area summary table with stn_name, ExPi_FAR, Alloc_FAR, TotCap_FAR
+        # create station area weighted FAR values for Indicator summaries
+        # create buildout summary sum_SF_build, activ_SF_build, wstat_FAR_build
         print "Calculating weighted FAR for each station area parcels..."
-        station_sum_fields = ["Wstat_ExPi_far", "Wstat_Alloc_far", "Wstat_TotCap_far"]
+        station_sum_fields = [
+            "Wstat_ExPi_far",
+            "Wstat_Alloc_far",
+            "Wstat_Build_far",
+        ]
         for field in station_sum_fields:
-            arcpy.AddField_management(in_table=suit_fc, field_name=field, field_type="DOUBLE")
-
-        station_names = set(row[0] for row in arcpy.da.SearchCursor(suit_fc, "stn_name"))
+            arcpy.AddField_management(
+                in_table=suit_fc, field_name=field, field_type="DOUBLE"
+            )
+        station_names = set(
+            row[0] for row in arcpy.da.SearchCursor(suit_fc, "stn_name")
+        )
         for station in station_names:
             if station is not None:
-                suit_fl = arcpy.MakeFeatureLayer_management(in_features=suit_fc, out_layer='suit_fl',
-                                                            where_clause="stn_name = '{}'".format(station))
-                land_areas = arcpy.da.TableToNumPyArray(suit_fl, "SHAPE@AREA", skip_nulls=True)
+                suit_fl = arcpy.MakeFeatureLayer_management(
+                    in_features=suit_fc,
+                    out_layer="suit_fl",
+                    where_clause="stn_name = '{}'".format(station),
+                )
+                land_areas = arcpy.da.TableToNumPyArray(
+                    suit_fl, "SHAPE@AREA", skip_nulls=True
+                )
                 land_area = land_areas["SHAPE@AREA"].sum()
-                with arcpy.da.UpdateCursor(suit_fl, ['SHAPE@AREA', "Wstat_ExPi_far"] + expi_fields[:-1]) as cur:
+                with arcpy.da.UpdateCursor(
+                        suit_fl,
+                        ["SHAPE@AREA"]
+                        + station_sum_fields
+                        + expi_fields[:-1]
+                        + alloc_fields
+                        + build_fields,
+                ) as cur:
                     for row in cur:
-                        area, alloc, sf, mf, ret, ind, off, hot = row
-                        area_share = area / land_area  # land area share for station
-                        row[1] = ((sf + mf + ret + ind + off + hot) / area) * area_share  # sum of activity sqft/par_sqft
-                        cur.updateRow(row)
-                with arcpy.da.UpdateCursor(suit_fl, ['SHAPE@AREA', "Wstat_Alloc_far"] + alloc_fields) as cur:
-                    for row in cur:
-                        area, alloc, sf, mf, ret, ind, off, hot = row
-                        area_share = area / land_area  # land area share for station
-                        row[1] = ((sf + mf + ret + ind + off + hot) / area) * area_share  # sum of activity sqft/par_sqft
-                        cur.updateRow(row)
-                with arcpy.da.UpdateCursor(suit_fl, ['SHAPE@AREA', "Wstat_TotCap_far"] + totcap_fields) as cur:
-                    for row in cur:
-                        area, alloc, sf, mf, ret, ind, off, hot = row
-                        area_share = area / land_area  # land area share for station
-                        row[1] = ((sf + mf + ret + ind + off + hot) / area) * area_share  # sum of activity sqft/par_sqft
+                        p_area, expi_far, alloc_far, build_far, \
+                        ep_sf, ep_mf, ep_ret, ep_ind, ep_off, ep_hot, \
+                        a_sf, a_mf, a_ret, a_ind, a_off, a_hot, \
+                        b_sf, b_mf, b_ret, b_ind, b_off, b_hot = row
+                        area_share = p_area / land_area  # land area share for station
+                        ep_sqft_sum = (ep_sf + ep_mf + ep_ret + ep_ind + ep_off + ep_hot)  # sum of activity sqft
+                        a_sqft_sum = (a_sf + a_mf + a_ret + a_ind + a_off + a_hot)  # sum of activity sqft
+                        b_sqft_sum = (b_sf + b_mf + b_ret + b_ind + b_off + b_hot)  # sum of activity sqft
+                        row[1] = (ep_sqft_sum / p_area) * area_share  # sum of activity sqft/par_sqft [expi]
+                        row[2] = (a_sqft_sum / p_area) * area_share  # sum of activity sqft/par_sqft [alloc]
+                        row[3] = (b_sqft_sum / p_area) * area_share  # sum of activity sqft/par_sqft [buildout]
                         cur.updateRow(row)
                 arcpy.Delete_management(suit_fl)
-        print ""
+
+        # create Corridor Segment and TAZ summaries with conversion to RES and JOBS
+        print "Generating Segment and TAZ summary tables..."
+        taz = arcpy.FeatureClassToFeatureClass_conversion(in_features=taz, out_path=scen_gdb, out_name='taz')
+        p_fields = [id_field, "seg_num"] + expi_fields + alloc_fields + build_fields
+        t_fields = [tid, "Share", "LCRT_H40", "LCRT_E40"]
+        pwTAZ = arcpy.SpatialJoin_analysis(
+            target_features=suit_fc, join_features=taz,
+            out_feature_class="in_memory\parcels_wTAZ", match_option="INTERSECT"
+        )
+        p_df = pd.DataFrame(
+            arcpy.da.TableToNumPyArray(
+                in_table=pwTAZ, field_names=p_fields + t_fields, null_value=0.0
+            )
+        ).set_index(id_field)
+
+        # segment summary
+        seg_summaries = p_df.groupby(seg_id_field).sum()
+        seg_summaries.drop(tid, axis=1, inplace=True)
+        seg_summaries["RES_build"] = (seg_summaries[build_fields[0]] / activity_sf_factors["SF"]) + (
+                seg_summaries[build_fields[1]] / activity_sf_factors["MF"]
+        )
+        seg_summaries["JOBS_build"] = (
+                (seg_summaries[build_fields[2]] / activity_sf_factors["Ret"])
+                + (seg_summaries[build_fields[3]] / activity_sf_factors["Ind"])
+                + (seg_summaries[build_fields[4]] / activity_sf_factors["Off"])
+        )  # + (seg_summaries[build_fields[5]] / activity_sf_factors["Hot"])
+        seg_summaries.reset_index(inplace=True)
+
+        # taz summary
+        taz_summaries = p_df.groupby(tid).sum()
+        taz_summaries.drop("seg_num", axis=1, inplace=True)
+
+        taz_summaries["RES_build"] = (taz_summaries[build_fields[0]] / activity_sf_factors["SF"]) + (
+                taz_summaries[build_fields[1]] / activity_sf_factors["MF"]
+        )
+        taz_summaries["JOBS_build"] = (
+                (taz_summaries[build_fields[2]] / activity_sf_factors["Ret"])
+                + (taz_summaries[build_fields[3]] / activity_sf_factors["Ind"])
+                + (taz_summaries[build_fields[4]] / activity_sf_factors["Off"])
+        )  # + (taz_summaries[buildout_flds[5]] / shares['Hot'])
+        taz_summaries.reset_index(inplace=True)
+
+        # write out tables
+        taz_summaries.to_csv(path.join(scen_ws, "taz_summary.csv"))
+        seg_summaries.to_csv(path.join(scen_ws, "seg_summary.csv"))
+
+        # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
+        taz_sum_simple = taz_summaries[t_fields + ["RES_build", "JOBS_build"]]
+        extendTableDf(
+            in_table=taz,
+            table_match_field=tid,
+            df=taz_sum_simple,
+            df_match_field=tid,
+            append_only=False,
+        )
+        # update RES and JOBS to reflect proportion of full TAZ
+        arcpy.CalculateField_management(in_table=taz, field='RES_build',
+                                        expression="!RES_build! * !Share!",
+                                        expression_type="PYTHON_9.3")
+        arcpy.CalculateField_management(in_table=taz, field='JOBS_build',
+                                        expression="!JOBS_build! * !Share!",
+                                        expression_type="PYTHON_9.3")
+        # calculate difference from current CoG estimates
+        arcpy.AddField_management(in_table=taz, field_name="RES_diff", field_type="DOUBLE")
+        arcpy.AddField_management(in_table=taz, field_name="JOBS_diff", field_type="DOUBLE")
+        arcpy.CalculateField_management(in_table=taz, field="RES_diff",
+                                        expression="!RES_build! - !LCRT_H40!",
+                                        expression_type="PYTHON_9.3")
+        arcpy.CalculateField_management(in_table=taz, field="JOBS_diff",
+                                        expression="!JOBS_build! - !LCRT_E40!",
+                                        expression_type="PYTHON_9.3")
+        print "DONE!"
 
 
 except LicenseError:
