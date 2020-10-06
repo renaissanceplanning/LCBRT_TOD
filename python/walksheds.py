@@ -11,27 +11,22 @@ def generate_walksheds(stations, walk_net, imp_field, cost, out_gdb,
         impedance_attribute=imp_field, travel_from_to="TRAVEL_FROM",
         default_break_values=cost, polygon_type="SIMPLE_POLYS",
         merge="NO_OVERLAP", nesting_type="DISKS", line_type="NO_LINES")
-
+    sa_layer = sa_layer.getOutput(0)
+    
     # Add locations
     stations_fl = arcpy.MakeFeatureLayer_management(
         in_features=stations, where_clause=stations_wc)
 
-    arcpy.AddLocations_na(in_network_analysis_layer="service_area",
+    arcpy.AddLocations_na(in_network_analysis_layer=sa_layer,
                           sub_layer="Facilities", in_table=stations_fl,
                           field_mappings="Name Name #",
                           search_tolerance="5000 feet", )
 
     # Solve the problem
-    arcpy.Solve_na(in_network_analysis_layer="service_area")
+    arcpy.Solve_na(in_network_analysis_layer=sa_layer)
 
-    # Export the result
-    # sublayer_names = arcpy.na.GetNAClassNames(sa_layer)
-    # poly_layer_name = sublayer_names["Polygons"]
-    # poly_sublayer = arcpy.mapping.ListLayers(sa_layer, poly_layer_name)[0]
-
-    # out_ws, out_name = out_file.rsplit('\\', 1)
     arcpy.FeatureClassToFeatureClass_conversion(
-        in_features="service_area\\polygons",
+        in_features=path.join(sa_layer, "polygons"),
         out_path=out_gdb,
         out_name='walksheds')
 
