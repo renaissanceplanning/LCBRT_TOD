@@ -162,7 +162,7 @@ import numpy as np
 # %% WORKSPACES AND SCENARIO NAMES.
 source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb"
 scenarios_ws = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios"
-scenarios = ["WE_Sum", "WE_Fair"]
+scenarios = ["WE_Fair"]
 arcpy.env.overwriteOutput = True
 
 # %% GLOBAL SETTINGS/SPECS
@@ -194,6 +194,7 @@ activity_sf_factors = {
     "Off": 400,
     "Hot": 500,
 }
+
 
 # %% HELPER FUNCTIONS AND CLASSES
 class LicenseError(Exception):

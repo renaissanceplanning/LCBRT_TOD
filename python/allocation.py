@@ -69,7 +69,7 @@ def allocate_dict(
                     segment_act_control - parcel_act_cap
                 )  # calculate updated control
                 # if new control  is negative, reset activity control and parcel allocations
-                dist = 0.0
+                dist = 0
                 if updated_act_control < 0:
                     dist = updated_act_control * -1
                     updated_act_control += dist
