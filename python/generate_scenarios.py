@@ -779,7 +779,7 @@ try:
 
         # Run allocation
         print "Allocating square footage based on change capacity and segment level control totals"
-        p_flds = [id_field, seg_id_field, "tot_suit"] + chgcap_fields
+        p_flds = [id_field, seg_id_field, "tot_suit"] + chgcap_fields + pipe_fields[:-1]
         pdf = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
                 in_table=suit_fc, field_names=p_flds, null_value=0.0
@@ -792,6 +792,9 @@ try:
         ctl_df = pd.read_csv(
             control_tbl, usecols=control_fields + [control_seg_attr]
         ).set_index(control_seg_attr)
+
+        # # remove activity sqft already absorbed by pipeline development
+        # pipeline_by_seg =
         ctl_dict = ctl_df.T.to_dict()
         allocation_df = allocate_dict(
             suit_df=pdf,
