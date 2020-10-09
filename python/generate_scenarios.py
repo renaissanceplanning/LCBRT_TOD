@@ -467,7 +467,7 @@ try:
         # Build walkshed for suitability calculations
         print "Generating walksheds..."
         walk_shed = generate_walksheds(
-            stations=stations,
+            stations=stations_fl,
             walk_net=walk_net,
             imp_field=imp_field,
             cost=cost,
@@ -779,22 +779,31 @@ try:
 
         # Run allocation
         print "Allocating square footage based on change capacity and segment level control totals"
-        p_flds = [id_field, seg_id_field, "tot_suit"] + chgcap_fields + pipe_fields[:-1]
+        pipe_fields = pipe_fields[:-1]
+        p_flds = [id_field, seg_id_field, "tot_suit"] + chgcap_fields + pipe_fields
         pdf = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
                 in_table=suit_fc, field_names=p_flds, null_value=0.0
             )
         ).set_index(keys=id_field)
 
-        # read control table to dictionary
+        ''' read control table to df '''
         control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
         control_seg_attr = "segment"
+        demand_phase = "group"
         ctl_df = pd.read_csv(
-            control_tbl, usecols=control_fields + [control_seg_attr]
+            control_tbl, usecols=control_fields + [control_seg_attr, demand_phase]
         ).set_index(control_seg_attr)
+        ctl_df = ctl_df[ctl_df[demand_phase] == "net"].drop(demand_phase, axis=1)
 
-        # # remove activity sqft already absorbed by pipeline development
-        # pipeline_by_seg =
+        ''' remove activity sqft already absorbed by pipeline development '''
+        pipeline_df = pdf[[seg_id_field] + pipe_fields]
+        pipeline_by_seg = pipeline_df.groupby(seg_id_field).sum()
+        for col in ctl_df.columns:
+            idx = ctl_df.columns.get_loc(col)
+            ctl_df[col] = ctl_df[col] - pipeline_by_seg.iloc[:, idx]
+
+        ''' run allocation '''
         ctl_dict = ctl_df.T.to_dict()
         allocation_df = allocate_dict(
             suit_df=pdf,
