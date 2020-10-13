@@ -24,6 +24,7 @@ def generate_walksheds(stations, walk_net, imp_field, cost, out_gdb,
     # Solve the problem
     arcpy.Solve_na(in_network_analysis_layer="service_area")
 
+    # Export the result
     arcpy.FeatureClassToFeatureClass_conversion(
         in_features="service_area\\polygons",
         out_path=out_gdb,

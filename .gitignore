@@ -34,3 +34,6 @@
 R/.RData
 R/.Rhistory
 
+.idea/misc.xml
+.idea/scripts.iml
+.idea/workspace.xml
