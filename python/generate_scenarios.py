@@ -161,8 +161,8 @@ import numpy as np
 
 # %% WORKSPACES AND SCENARIO NAMES.
 source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb"
-scenarios_ws = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios"
-scenarios = ["WE_Fair"]
+scenarios_ws = r"D:\Users\IA7\Desktop\scenarios"
+scenarios = ["WE_Sum", "WE_Fair"]
 arcpy.env.overwriteOutput = True
 
 # %% GLOBAL SETTINGS/SPECS
@@ -344,49 +344,27 @@ control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
 control_seg_attr = "segment"
 
 # %% DERIVED INPUTS/SPECS
-par_est_fields = genFieldList("Par")  # Parcel estimates of existing floor area
-new_dev_fields = genFieldList("New")  # New dev pts estimates of existing floor area
-ex_lu_fields = genFieldList(
-    "Ex"
-)  # Estimates of existing floor are (parcel-based + new-dev)
+par_est_fields = genFieldList(suffix="Par")  # Parcel estimates of existing floor area
+new_dev_fields = genFieldList(suffix="New")  # New dev pts estimates of existing floor area
+ex_lu_fields = genFieldList(suffix="Ex")  # Estimates of existing floor are (parcel-based + new-dev)
 pipe_fields = genFieldList(suffix="Pipe")  # Pipeline floor area
 expi_fields = genFieldList(suffix="ExPi")  # Existing + pipeline floor area
-tgt_sf_fields = genFieldList(
-    suffix="Tgt", include_untracked=False
-)  # Target floor area (from TOD template application)
-tgt_sf_field_dict = makeTargetFieldsDict(
-    tgt_sf_fields
-)  # Dictionary for conversion of TOD template activities to floor area
-adj_fields = genFieldList(
-    suffix="Adj", include_untracked=False
-)  # Adjusted floor area targets (TOD templates adjusted based on expi)
-basecap_fields = genFieldList(
-    suffix="BCap", include_untracked=False
-)  # Build-out capacity for non-TOD parcels (from expected LU and FAR)
-totcap_fields = genFieldList(
-    suffix="TotCap", include_untracked=False
-)  # Total capacity, blended from TOD and non-TOD
-chgcap_fields = genFieldList(
-    suffix="ChgCap", include_untracked=False
-)  # Capacity for change (total capacity minus existing)
+tgt_sf_fields = genFieldList(suffix="Tgt", include_untracked=False)  # Target floor area (from TOD template application)
+tgt_sf_field_dict = makeTargetFieldsDict(tgt_sf_fields)  # Dictionary for conversion of TOD template activities to floor area
+adj_fields = genFieldList(suffix="Adj", include_untracked=False)  # Adjusted floor area targets (TOD templates adjusted based on expi)
+basecap_fields = genFieldList(suffix="BCap", include_untracked=False)  # Build-out capacity for non-TOD parcels (from expected LU and FAR)
+totcap_fields = genFieldList(suffix="TotCap", include_untracked=False)  # Total capacity, blended from TOD and non-TOD
+chgcap_fields = genFieldList(suffix="ChgCap", include_untracked=False)  # Capacity for change (total capacity minus existing)
 
 # allocation fields
-alloc_fields = genFieldList(
-    suffix="Alloc", include_untracked=False
-)  # allocated sqft in at buildout based on suitability, capacity for change and control sqft anticipated
+alloc_fields = genFieldList(suffix="Alloc", include_untracked=False)  # allocated sqft in at buildout based on suitability, capacity for change and control sqft anticipated
 # buildout fields
 build_fields = genFieldList(suffix="Build", include_untracked=False)
 
 # FAR conversions for AGOL
-far_expi_fields = genFieldList(
-    suffix="ExPi", measure="FAR", include_untracked=False
-)  # FAR for existing and pipeline
-far_alloc_fields = genFieldList(
-    suffix="Alloc", measure="FAR", include_untracked=False
-)  # FAR allocated
-far_build_fields = genFieldList(
-    suffix="build", measure="FAR", include_untracked=False
-)  # FAR available overall (TOD/non-TOD)
+far_expi_fields = genFieldList(suffix="ExPi", measure="FAR", include_untracked=False)  # FAR for existing and pipeline
+far_alloc_fields = genFieldList(suffix="Alloc", measure="FAR", include_untracked=False)  # FAR allocated
+far_build_fields = genFieldList(suffix="build", measure="FAR", include_untracked=False)  # FAR available overall (TOD/non-TOD)
 
 # %% PROCESS
 try:
@@ -779,8 +757,8 @@ try:
 
         # Run allocation
         print "Allocating square footage based on change capacity and segment level control totals"
-        pipe_fields = pipe_fields[:-1]
-        p_flds = [id_field, seg_id_field, "tot_suit"] + chgcap_fields + pipe_fields
+        pipe_fields_noOther = pipe_fields[:-1]
+        p_flds = [id_field, seg_id_field, "tot_suit"] + chgcap_fields + pipe_fields_noOther
         pdf = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
                 in_table=suit_fc, field_names=p_flds, null_value=0.0
@@ -797,11 +775,16 @@ try:
         ctl_df = ctl_df[ctl_df[demand_phase] == "net"].drop(demand_phase, axis=1)
 
         ''' remove activity sqft already absorbed by pipeline development '''
-        pipeline_df = pdf[[seg_id_field] + pipe_fields]
+        pipeline_df = pdf[[seg_id_field] + pipe_fields_noOther]
         pipeline_by_seg = pipeline_df.groupby(seg_id_field).sum()
         for col in ctl_df.columns:
             idx = ctl_df.columns.get_loc(col)
-            ctl_df[col] = ctl_df[col] - pipeline_by_seg.iloc[:, idx]
+            ctl_df[col] = np.where((ctl_df[col] != 0),
+                                   ctl_df[col] - pipeline_by_seg.iloc[:, idx],
+                                   0)
+            ctl_df[col] = np.where((ctl_df[col] < 0),
+                                   0,
+                                   ctl_df[col])
 
         ''' run allocation '''
         ctl_dict = ctl_df.T.to_dict()
@@ -995,7 +978,7 @@ try:
         arcpy.CalculateField_management(in_table=taz, field="JOBS_diff",
                                         expression="!JOBS_build! - !LCRT_E40!",
                                         expression_type="PYTHON_9.3")
-        print "DONE!"
+        print "DONE!\n"
 
 
 except LicenseError:
