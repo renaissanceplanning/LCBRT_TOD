@@ -8,7 +8,7 @@ Mode <- function(x) {
   ux[which.max(tabulate(match(x, ux)))]
 }
 
-setwd("K:/Projects/BCDCOG/Features/Files_For_RDB/RDB_V3")
+setwd("K:/Projects/BCDCOG/Features/Files_For_RDB/RDB_V3/source_shapefiles")
 
 Parcels <- read_sf("Parcels.shp")
 Parcels$Sq_Feet <- st_area(Parcels)
@@ -59,7 +59,8 @@ Small_Parcels$SF_Cpct <- if_else(Small_Parcels$Exp_LU == "Vacant/Undeveloped" |
 Large_Parcels$Exp_LU <- Large_Parcels$Landuse
 Large_Parcels$Exp_FAR <- NA
 
-Vacant_Large <- subset(Large_Parcels, Large_Parcels$Exp_LU == "Vacant/Undeveloped" | is.na(Large_Parcels$Exp_LU))
+Vacant_Large <- subset(Large_Parcels, Large_Parcels$Exp_LU == "Vacant/Undeveloped" | 
+                         is.na(Large_Parcels$Exp_LU))
 
 Relevant_Parcels <- subset(Parcels, Parcels$Landuse != "Vacant/Undeveloped"    &
                                          Parcels$Landuse != "Utilities"            &
@@ -322,7 +323,7 @@ write_sf(Parcels, "Parcels.shp")
 # adding expected floor area
 Parcels <- read_sf("Parcels.shp")
 
-Parcels$EXP_Sqft <- Parcels3$Sq_Feet * Parcels3$Mean_FAR
+Parcels$EXP_Sqft <- Parcels$Sq_Feet * Parcels3$Mean_FAR
 
 write_sf(Parcels, "Parcels.shp")
 write_sf(Parcels,"K:/Projects/BCDCOG/Features/Files_For_RDB/RDB_V3/Backup/Parcels_Back_Up.shp")
