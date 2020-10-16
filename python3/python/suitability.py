@@ -197,10 +197,10 @@ if __name__ == "__main__":
     arcpy.env.overwriteOutput = True
 
     in_suit_fc = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\LCBRT_data.gdb\parcels"
-    stations = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\LCBRT_data.gdb\Stations_LCRT_BRT_Recommended_andAlternative_20200814.shp"
+    stations = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\LCBRT_data.gdb\stations_LCRT_BRT_scenarios_20200814"
     stations_wc = arcpy.AddFieldDelimiters(stations, "WE_Sum") + " <> 'NA'"
     station_buffers = (
-        r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\QuarterMile_Walk_Arc.shp"
+        r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\temp\TOD_TestRun\TOD_TEST_CR.gdb\walksheds"
     )
     id_field = "ParclID"
     is_do_field = "DO_Site"
@@ -216,7 +216,7 @@ if __name__ == "__main__":
                "in_walkshed": 0.1,
                "dev_size": 0.1}  # (IS DOS, IsVacant, InTOD, InWalkShed, size)
     # weights = [0.60, 0.30, 0.10, 0.20]  # DO, IsVacant, dev arae, qm walk buffer IS DOS, IsVacant, InTOD, InWalkShed, size
-    out_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\testRun\temp.gdb"
+    out_gdb = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\temp\TOD_TestRun\TOD_TEST_CR.gdb"
     # out_table = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\initial_suitability.dbf"
 
     generate_suitability(

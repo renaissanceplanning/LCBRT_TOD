@@ -144,7 +144,12 @@ The key steps in the scenario generation process are outlined below:
 """
 
 # %% IMPORTS
+
 import arcpy
+from pathlib import Path
+import sys
+
+sys.path.append(Path(__file__).parent)
 from suitability import generate_suitability
 from walksheds import generate_walksheds
 from existing_sqft import sqFtByLu
@@ -160,8 +165,10 @@ import pandas as pd
 import numpy as np
 
 # %% WORKSPACES AND SCENARIO NAMES.
-source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb"
-scenarios_ws = r"D:\Users\IA7\Desktop\scenarios"
+
+project_dir = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA"
+source_gdb = str(Path(project_dir, "LCBRT_data.gdb"))
+scenarios_ws = str(Path(project_dir, "scenarios"))
 scenarios = ["WE_Sum", "WE_Fair"]
 arcpy.env.overwriteOutput = True
 
@@ -264,7 +271,7 @@ def makeTargetFieldsDict(tgt_fields):
 # %% INPUT DATA SETS
 # Parcels
 parcels = "parcels"
-parcels = path.join(source_gdb, parcels)
+parcels = str(Path(source_gdb, parcels))
 id_field = "ParclID"
 lu_field = "LandUse"
 par_est_fld_ref = {
@@ -290,7 +297,7 @@ basecap_lu = "Exp_LU"
 
 # New/pipeline features
 newpipe_fc = "pipeline_with_pid"
-newpipe_fc = path.join(source_gdb, newpipe_fc)
+newpipe_fc = str(Path(source_gdb, newpipe_fc))
 newpipe_par_field = "ParclID"
 newpipe_sqft = "RBA"
 newpipe_lu = "PropertyTy"
@@ -323,22 +330,22 @@ pipe_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + "LIKE '%Pipeline'"
 # Stations
 stations = "stations_LCRT_BRT_scenarios_20200814"
 st_type_emb_tbl = (
-    r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\tod_type_shares.csv"
+    str(Path(project_dir, "tables", "tod_type_shares.csv"))
 )
 
 # Network
-walk_net = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb\network\walk_network_ND"
+walk_net = str(Path(source_gdb, "network", "walk_network_ND"))
 imp_field = "Length"
 cost = "1320"
 restrictions = None
 
 # TAZ
-taz = path.join(source_gdb, "TAZ_LCRT_SBF08122020v2")
+taz = str(Path(source_gdb, "TAZ_LCRT_SBF08122020v2"))
 tid = "Big_TAZ"
 
 # Control variables
 control_tbl = (
-    r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv"
+    str(Path(project_dir, "tables\control_totals.csv"))
 )
 control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
 control_seg_attr = "segment"
@@ -374,7 +381,7 @@ try:
         raise LicenseError
 
     # Setup working environments for each scenario
-    arcpy.env.workspace = source_gdb
+    arcpy.env.workspace = str(source_gdb)
     scenarios_sr = arcpy.Describe(parcels).spatialReference
 
     # create scenario folder if not already there
@@ -410,7 +417,7 @@ try:
         #  (most of this is currently superfluous since we drop and recreate the gdb
         #   with each run)
         print("Extending station types table with embellishments...")
-        st_type_tbl = path.join(scen_gdb, "station_area_types")
+        st_type_tbl = str(Path(scen_gdb, "station_area_types"))
         type_emb = pd.read_csv(st_type_emb_tbl)
         type_emb_arr = np.array(
             np.rec.fromrecords(
@@ -435,7 +442,7 @@ try:
         # Assume stations source has the template fields already populated (stn_type, stn_name, stn_order)
         arcpy.Append_management(
             inputs=stations_fl,
-            target=path.join(scen_gdb, "stations"),
+            target=str(Path(scen_gdb, "stations")),
             schema_type="NO_TEST",
         )
         """ TODO: modify TOD.py to generate customized tables 

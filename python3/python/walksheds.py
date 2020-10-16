@@ -51,10 +51,15 @@ if __name__ == "__main__":
     walk_net = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\LCBRT_data.gdb\network\walk_network_ND"
     imp_field = "Length"
     cost = "1320"
-    stations_wc = arcpy.AddFieldDelimiters(stations, "Fair_WE") + " <> 'NA'"
+    stations_wc = arcpy.AddFieldDelimiters(stations, "WE_Sum") + " <> 'NA'"
     out_ws = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\temp\scenarios\Fair_WE"
-    out_gdb = r"D:\Users\DE7\Documents\temp\TOD_TestRun\TOD_TEST_CR.gdb"
+    out_gdb = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\temp\TOD_TestRun\TOD_TEST_CR.gdb"
     # out_file = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\Fair_WE\walksheds.shp"
 
-    generate_walksheds(stations, walk_net, imp_field, cost, out_gdb,
-                       stations_wc=None)
+    generate_walksheds(
+        stations,
+        walk_net,
+        imp_field,
+        cost,
+        out_gdb,
+        stations_wc)
