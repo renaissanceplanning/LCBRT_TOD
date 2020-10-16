@@ -8,19 +8,12 @@ lu_cats = [
     "Institutional",
     "Multifamily",
     "Office",
-    "Single-family"
+    "Single-family",
 ]
 
 # List of fields to which square footage (SF) will be assigned
 #  - corresponds to lu_cats for dict creation below
-lu_fields = [
-    "Ret_SF_Ex",
-    "Ind_SF_Ex",
-    "Off_SF_Ex",
-    "MF_SF_Ex",
-    "Off_SF_Ex",
-    "SF_SF_Ex"
-]
+lu_fields = ["Ret_SF_Ex", "Ind_SF_Ex", "Off_SF_Ex", "MF_SF_Ex", "Off_SF_Ex", "SF_SF_Ex"]
 lu_field_ref = dict(list(zip(lu_cats, lu_fields)))
 
 
@@ -105,8 +98,7 @@ def sqFtByLu(in_fc, sqft_field, lu_field, lu_field_ref, where_clause=None):
                 c.updateRow(r)
 
 
-def sqFtByLu_pd(in_fc, id_field, sqft_field, lu_field, lu_field_ref, 
-                where_clause=None):
+def sqFtByLu_pd(in_fc, id_field, sqft_field, lu_field, lu_field_ref, where_clause=None):
     """
     in_fc: String (path to feature class)
         Feature class 
@@ -128,9 +120,7 @@ def sqFtByLu_pd(in_fc, id_field, sqft_field, lu_field, lu_field_ref,
     all_fields = [id_field, lu_field, sqft_field]
     # Dump in_fc to df
     df = pd.DataFrame(
-        arcpy.da.TableToNumPyArray(
-            in_fc, all_fields, where_clause=where_clause
-        )
+        arcpy.da.TableToNumPyArray(in_fc, all_fields, where_clause=where_clause)
     )
 
     for update_field in update_fields:

@@ -10,8 +10,8 @@ lu_cats = [
     "Office Pipeline",
     "Retail Pipeline",
     "Specialty Pipeline",
-    "Student Pipeline"
-    ]
+    "Student Pipeline",
+]
 
 # List of fields to which square footage (SF) will be assigned
 #  - corresponds to lu_cats for dict creation below
@@ -24,11 +24,13 @@ lu_fields = [
     "Off_SF_Pipe",
     "Ret_SF_Pipe",
     "Oth_SF_Pipe",
-    "Oth_SF_Pipe"
-    ]
+    "Oth_SF_Pipe",
+]
 lu_field_ref = dict(list(zip(lu_cats, lu_fields)))
 
-pipeline_fc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\SBF_New_Pipe_Merged.shp"
+pipeline_fc = (
+    r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\SBF_New_Pipe_Merged.shp"
+)
 pipeline_wc = arcpy.AddFieldDelimiters(pipeline_fc, "PropertyTy") + "LIKE '%Pipeline'"
 pipeline_fl = arcpy.MakeFeatureLayer_management(pipeline_fc, "pipe", pipeline_wc)
 
@@ -70,9 +72,3 @@ def sqFtByLu(in_fc, sqft_field, lu_field, lu_field_ref, where_clause=None):
                 update_idx = update_fields.index(update_field)
                 r[update_idx] = bldg_area
                 c.updateRow(r)
-                
-
-    
-            
-
-

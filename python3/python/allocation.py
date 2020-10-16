@@ -16,12 +16,7 @@ for segment in segments:
 
 
 def allocate_dict(
-    suit_df,
-    suit_id_field,
-    suit_field,
-    suit_df_seg_field,
-    suit_cap_fields,
-    control_dict,
+    suit_df, suit_id_field, suit_field, suit_df_seg_field, suit_cap_fields, control_dict
 ):
     # sort data by segment and suitability descending
     suit_df.sort_values(
@@ -59,17 +54,11 @@ def allocate_dict(
             for act_key in list(parcel_count.keys()):
                 alloc_att = "{}_SF_{}".format(act_key, "alloc")
                 # get segment activity control val
-                segment_act_control = seg_controls[
-                    act_key
-                ]
+                segment_act_control = seg_controls[act_key]
                 # get parcel activity capacity val (ie fill_to_val)
-                parcel_act_cap = parcel_count[
-                    act_key
-                ]
+                parcel_act_cap = parcel_count[act_key]
                 # calculate updated control
-                updated_act_control = (
-                    segment_act_control - parcel_act_cap
-                )
+                updated_act_control = segment_act_control - parcel_act_cap
                 # if new control  is negative, reset activity control and parcel allocations
                 dist = 0
                 if updated_act_control < 0:

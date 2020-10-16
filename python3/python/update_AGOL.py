@@ -13,10 +13,10 @@ def get_group_id(group_name, owner):
         return None
 
 
-''' Start setting variables '''
+""" Start setting variables """
 # Set the path to the project
 scripts_folder = Path(__file__).resolve().parent.parent
-project_path = Path(scripts_folder, 'maps', 'LCBRT_maps', 'LCBRT_maps.aprx')
+project_path = Path(scripts_folder, "maps", "LCBRT_maps", "LCBRT_maps.aprx")
 
 # user/password of the owner account
 portal = "http://www.arcgis.com"  # Can also reference a local portal
@@ -26,15 +26,16 @@ password = "1%8CGBrI53Gg"
 # Set sharing options
 shr_to_org = True
 shr_to_everyone = False
-shr_with_groups = get_group_id(group_name='Low Country BRT - TOD',
-                               owner=user)  # GroupID unique identifier
+shr_with_groups = get_group_id(
+    group_name="Low Country BRT - TOD", owner=user
+)  # GroupID unique identifier
 
 # Feature service/SD name in arcgis.com,
 service_names = ["WE_Sum", "WE_Fair"]
 
 # local path
-LOCAL_PATH = Path(scripts_folder, 'maps')
-''' End setting variables '''
+LOCAL_PATH = Path(scripts_folder, "maps")
+""" End setting variables """
 
 
 def update_fs_from_map(pro_project, map_name, service_name):
@@ -44,8 +45,10 @@ def update_fs_from_map(pro_project, map_name, service_name):
 
     #: Delete draft and definition if existing
     for file_path in (draft, service_def):
-        if file_path.exists():  #: This check can be replaced in 3.8 with missing_ok=True
-            print(f'deleting existing {file_path}...')
+        if (
+            file_path.exists()
+        ):  #: This check can be replaced in 3.8 with missing_ok=True
+            print(f"deleting existing {file_path}...")
             file_path.unlink()
 
     # Create a new SDDraft and stage to SD
@@ -58,15 +61,16 @@ def update_fs_from_map(pro_project, map_name, service_name):
                 map_or_layers=m,
                 out_sddraft=draft,
                 service_name=service_name,
-                server_type='HOSTING_SERVER',
-                service_type='FEATURE_ACCESS',
-                folder_name='',
+                server_type="HOSTING_SERVER",
+                service_type="FEATURE_ACCESS",
+                folder_name="",
                 overwrite_existing_service=True,
                 copy_data_to_server=True,
-                enable_editing=True, )
+                enable_editing=True,
+            )
             arcpy.StageService_server(
-                in_service_definition_draft=draft,
-                out_service_definition=service_def)
+                in_service_definition_draft=draft, out_service_definition=service_def
+            )
 
     print(("Connecting to {}".format(portal)))
     gis = GIS(portal, user, password)
@@ -74,9 +78,13 @@ def update_fs_from_map(pro_project, map_name, service_name):
     # check to see if the service exists and overwrite, otherwise publish new service
     try:
         print("Search for original SD on portal…")
-        service_def_item = gis.content.search(query=f"title:{service_name} AND owner:{user}",
-                                              item_type="Service Definition")[0]
-        print(f"Found SD: {service_def_item.title}, ID: {service_def_item.id} n Uploading and overwriting…")
+        service_def_item = gis.content.search(
+            query=f"title:{service_name} AND owner:{user}",
+            item_type="Service Definition",
+        )[0]
+        print(
+            f"Found SD: {service_def_item.title}, ID: {service_def_item.id} n Uploading and overwriting…"
+        )
         service_def_item.update(data=str(service_def))
         print("Overwriting existing feature service…")
         feature_service = service_def_item.publish(overwrite=True)
@@ -89,4 +97,6 @@ def update_fs_from_map(pro_project, map_name, service_name):
 
     if shr_to_org or shr_to_everyone or shr_with_groups:
         print("Setting sharing options…")
-        feature_service.share(org=shr_to_org, everyone=shr_to_everyone, groups=shr_with_groups)
+        feature_service.share(
+            org=shr_to_org, everyone=shr_to_everyone, groups=shr_with_groups
+        )

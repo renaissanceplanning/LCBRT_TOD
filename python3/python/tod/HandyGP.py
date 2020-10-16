@@ -2,7 +2,7 @@
 # Author: Alex Bell, Renaissance Planning
 # Date: November, 2017
 # Description:
-'''
+"""
 This library provides convenient geoprocessing routines that build on arcpy
 functionality, but augment those tools to simplify common tasks that require
 multiple geoprocessors to be run.
@@ -23,7 +23,7 @@ Inventory:
     create fishnet: copy of arctoolbox Create Fishnet tool but honors selected features
         and where clauses.
 
-'''
+"""
 
 import arcpy
 import numpy as np
@@ -39,7 +39,7 @@ _FIELD_TYPE_DICT = {
     "Integer": "LONG",
     "Single": "FLOAT",
     "Double": "DOUBLE",
-    "Date": "DATE"
+    "Date": "DATE",
 }
 _FIELD_DTYPE_DICT = {
     "String": "U",
@@ -47,7 +47,7 @@ _FIELD_DTYPE_DICT = {
     "Integer": "<i4",
     "Single": "<f8",
     "Double": "<f8",
-    "Date": "M"  # ?
+    "Date": "M",  # ?
 }
 
 
@@ -62,7 +62,7 @@ class HandyAttribute(object):
     def setValue(self, value):
         if self.field_type in ["Integer", "SmallInteger"]:
             value = int(value)
-        elif self.field_type in ['Single', 'Double', 'Float']:
+        elif self.field_type in ["Single", "Double", "Float"]:
             value = float(value)
         else:
             value = str(value)
@@ -79,6 +79,7 @@ class HandyAttribute(object):
 ##        self.fields = []
 ##
 ##    def addField
+
 
 class HandyGeometry(object):
     def __init__(self, ID, shape, geometry_type=None, sr=None):
@@ -133,11 +134,13 @@ def _getWorkspaceType(path):
 
 def _makeFieldName(fc, new_field_name, seed=1):
     ws_type = _getWorkspaceType(fc)
-    if ws_type == 'FileSystem':
+    if ws_type == "FileSystem":
         new_field_name = new_field_name[:10]
     if _checkNewFieldName(fc, new_field_name):
-        if ws_type == 'FileSystem':
-            new_field_name = new_field_name[:(10 - (len(str(seed)) + 1))] + "_" + str(seed)
+        if ws_type == "FileSystem":
+            new_field_name = (
+                new_field_name[: (10 - (len(str(seed)) + 1))] + "_" + str(seed)
+            )
         else:
             new_field_name = new_field_name + "_" + str(seed)
         return _makeFieldName(fc, new_field_name, seed + 1)
@@ -169,8 +172,9 @@ def _getDistanceBetweenPoints(point_1, point_2, sr):
 def _createFishnetCoords(fc, where_clause=None, sr=None):
     if not sr:
         sr = arcpy.Describe(fc).spatialReference
-    with arcpy.da.SearchCursor(fc, "SHAPE@", where_clause=where_clause,
-                               spatial_reference=sr) as c:
+    with arcpy.da.SearchCursor(
+        fc, "SHAPE@", where_clause=where_clause, spatial_reference=sr
+    ) as c:
         extents = [r[0].extent for r in c]
     x_min = min([extent.XMin for extent in extents])
     x_max = max([extent.XMax for extent in extents])
@@ -183,7 +187,7 @@ def _createFishnetCoords(fc, where_clause=None, sr=None):
 
 
 def _cleanUUID(uuid_obj):
-    return str(uuid_obj).replace('-', '_')
+    return str(uuid_obj).replace("-", "_")
 
 
 # numpy helpers
@@ -191,7 +195,7 @@ def _getFieldDType(fc, field_name):
     field = arcpy.ListFields(fc, field_name)[0]
     ftype = field.type
     dtype = _FIELD_DTYPE_DICT[ftype]
-    if dtype == 'U':
+    if dtype == "U":
         dtype = "{}{}".format(dtype, field.length)
     return dtype
 
@@ -208,38 +212,45 @@ def _makeArrayFromDf(df, dtype):
 
 # Extend table with data frame
 def extendTableDf(in_table, table_match_field, df, df_match_field, **kwargs):
-    in_array = np.array(
-        np.rec.fromrecords(
-            df.values, names=df.dtypes.index.tolist()
-        )
+    in_array = np.array(np.rec.fromrecords(df.values, names=df.dtypes.index.tolist()))
+    arcpy.da.ExtendTable(
+        in_table=in_table,
+        table_match_field=table_match_field,
+        in_array=in_array,
+        array_match_field=df_match_field,
+        **kwargs
     )
-    arcpy.da.ExtendTable(in_table=in_table,
-                         table_match_field=table_match_field,
-                         in_array=in_array,
-                         array_match_field=df_match_field,
-                         **kwargs)
+
 
 def dfToArcpyTable(df, out_table):
-    in_array = np.array(
-        np.rec.fromrecords(
-            df.values, names=df.dtypes.index.tolist()
-        )
-    )
+    in_array = np.array(np.rec.fromrecords(df.values, names=df.dtypes.index.tolist()))
     arcpy.da.NumPyArrayToTable(in_array, out_table)
+
+
 # Maximum overlap spatial join
 # ------------------------------------------------------------------------------------
-def maximumOverlapSpatialJoin(in_features, in_id_field,
-                              target_features, target_id_field,
-                              output_type, output_fc=None,
-                              in_expression="", target_expression="",
-                              null_value=0, sr=None, min_share=0.0):
-    '''output_type = ['FIELD', 'SHAPE'], in_id_field and target_id_field should be different'''
+def maximumOverlapSpatialJoin(
+    in_features,
+    in_id_field,
+    target_features,
+    target_id_field,
+    output_type,
+    output_fc=None,
+    in_expression="",
+    target_expression="",
+    null_value=0,
+    sr=None,
+    min_share=0.0,
+):
+    """output_type = ['FIELD', 'SHAPE'], in_id_field and target_id_field should be different"""
 
     # make feature layers
-    in_layer = arcpy.MakeFeatureLayer_management(in_features, "xx__MOSJ_in__xx",  # str(uuid.uuid1())
-                                                 where_clause=in_expression)
-    target_layer = arcpy.MakeFeatureLayer_management(target_features, "xx__MOSJ_tar__xx",
-                                                     where_clause=target_expression)
+    in_layer = arcpy.MakeFeatureLayer_management(
+        in_features, "xx__MOSJ_in__xx", where_clause=in_expression  # str(uuid.uuid1())
+    )
+    target_layer = arcpy.MakeFeatureLayer_management(
+        target_features, "xx__MOSJ_tar__xx", where_clause=target_expression
+    )
     # intersect feature layers, calculate overlapping areas
     arcpy.AddMessage("intersecting input features")
     intersect = "in_memory\\MOSJ_{}".format(_cleanUUID(uuid.uuid1()))
@@ -248,7 +259,9 @@ def maximumOverlapSpatialJoin(in_features, in_id_field,
     oa_field = _makeFieldName(intersect, "OA")
     arcpy.AddField_management(intersect, oa_field, "DOUBLE")
     arcpy.AddMessage("calculating overlap areas")
-    with arcpy.da.UpdateCursor(intersect, [oa_field, "SHAPE@"], spatial_reference=sr) as c:
+    with arcpy.da.UpdateCursor(
+        intersect, [oa_field, "SHAPE@"], spatial_reference=sr
+    ) as c:
         for r in c:
             poly = r[1]
             area = poly.area
@@ -257,14 +270,22 @@ def maximumOverlapSpatialJoin(in_features, in_id_field,
 
             # check fields in intersect table to get correct reference to target_id_field
     in_fields = arcpy.ListFields(in_features)
-    in_fields = [f.name for f in in_fields if f.type != "Shape" and f.name not in ['Shape_Area', 'Shape_Length']]
+    in_fields = [
+        f.name
+        for f in in_fields
+        if f.type != "Shape" and f.name not in ["Shape_Area", "Shape_Length"]
+    ]
     last_in_field = in_fields[-1]
     int_fields = arcpy.ListFields(intersect)
-    int_fields = [f for f in int_fields if f.type != "Shape" and f.name not in ['Shape_Area', 'Shape_Length']]
+    int_fields = [
+        f
+        for f in int_fields
+        if f.type != "Shape" and f.name not in ["Shape_Area", "Shape_Length"]
+    ]
     # print [f.aliasName for f in int_fields]
     last_in_field_idx = [f.name for f in int_fields].index(last_in_field)
     # print last_in_field_idx
-    for target_field in int_fields[last_in_field_idx + 1:]:
+    for target_field in int_fields[last_in_field_idx + 1 :]:
         if target_field.aliasName == target_id_field:
             target_id_field_idx = int_fields.index(target_field)
             break
@@ -276,13 +297,20 @@ def maximumOverlapSpatialJoin(in_features, in_id_field,
     # dissolve to get total overlap
     arcpy.AddMessage("dissolving overlap areas")
     dissolve = intersect + "Diss"
-    arcpy.Dissolve_management(intersect, dissolve, [in_id_field, target_id_field_int],
-                              "{} SUM".format(oa_field), "MULTI_PART")
+    arcpy.Dissolve_management(
+        intersect,
+        dissolve,
+        [in_id_field, target_id_field_int],
+        "{} SUM".format(oa_field),
+        "MULTI_PART",
+    )
 
     # record maximum overlap areas
     arcpy.AddMessage("finding maximum overlapping pairs")
     overlap_dict = {}
-    with arcpy.da.SearchCursor(dissolve, [in_id_field, target_id_field_int, "SUM_{}".format(oa_field)]) as c:
+    with arcpy.da.SearchCursor(
+        dissolve, [in_id_field, target_id_field_int, "SUM_{}".format(oa_field)]
+    ) as c:
         for r in c:
             i, t, oa = r
             cur_max = overlap_dict.get(i, (None, 0.0))
@@ -290,7 +318,7 @@ def maximumOverlapSpatialJoin(in_features, in_id_field,
                 cur_max = (t, oa)
             overlap_dict[i] = cur_max
 
-    if output_type == 'FIELD':
+    if output_type == "FIELD":
         arcpy.AddMessage("updating attribute table")
         # create new fields for storing output
         # id field
@@ -302,10 +330,12 @@ def maximumOverlapSpatialJoin(in_features, in_id_field,
         arcpy.AddField_management(in_features, oa_field, "DOUBLE")
         # check workspace/null value
         ws_type = _getWorkspaceType(in_features)
-        if ws_type != 'FileSystem':
+        if ws_type != "FileSystem":
             null_value = None
         # update attribute table
-        with arcpy.da.UpdateCursor(in_features, [in_id_field, out_field_name, oa_field, "SHAPE@"]) as c:
+        with arcpy.da.UpdateCursor(
+            in_features, [in_id_field, out_field_name, oa_field, "SHAPE@"]
+        ) as c:
             for r in c:
                 i = r[0]
                 t, oa = overlap_dict.get(i, (null_value, -1.0))
@@ -324,8 +354,9 @@ def maximumOverlapSpatialJoin(in_features, in_id_field,
         arcpy.AddField_management(intersect, keep_field, "SHORT")
         expr = arcpy.AddFieldDelimiters(intersect, keep_field) + "=1"
         # flag max overlap features
-        with arcpy.da.UpdateCursor(intersect, [in_id_field, target_id_field,
-                                               keep_field, total_oa_field]) as c:
+        with arcpy.da.UpdateCursor(
+            intersect, [in_id_field, target_id_field, keep_field, total_oa_field]
+        ) as c:
             for r in c:
                 i = r[0]
                 t = r[1]
@@ -335,26 +366,29 @@ def maximumOverlapSpatialJoin(in_features, in_id_field,
                     r[3] = oa
                     c.updateRow(r)
         # export features where KEEP = 1
-        out_ws, out_fc = output_fc.rsplit('\\', 1)
-        arcpy.FeatureClassToFeatureClass_conversion(intersect, out_ws, out_fc,
-                                                    where_clause=expr)
+        out_ws, out_fc = output_fc.rsplit("\\", 1)
+        arcpy.FeatureClassToFeatureClass_conversion(
+            intersect, out_ws, out_fc, where_clause=expr
+        )
         return output_fc
 
 
 # Multi-ring buffer, no overlap
 # -----------------------------------------------------------------------------------
-def multiRingBufferNoOverlap(in_features, id_field, output_fc,
-                             sr=None, buffer_distances=[], buffer_field=None):
+def multiRingBufferNoOverlap(
+    in_features, id_field, output_fc, sr=None, buffer_distances=[], buffer_field=None
+):
     if not sr:
         sr = arcpy.Describe(in_features).spatialReference
 
     # manage output_fc
     arcpy.AddMessage("creating output feature class")
-    out_ws, out_name = output_fc.rsplit('\\', 1)
+    out_ws, out_name = output_fc.rsplit("\\", 1)
     if arcpy.Exists(output_fc):
         arcpy.Delete_management(output_fc)
-    arcpy.CreateFeatureclass_management(out_ws, out_name, "POLYGON",
-                                        spatial_reference=sr)
+    arcpy.CreateFeatureclass_management(
+        out_ws, out_name, "POLYGON", spatial_reference=sr
+    )
     id_field_type = _getFieldTypeName(in_features, id_field)
     arcpy.AddField_management(output_fc, id_field, id_field_type)
     arcpy.AddField_management(output_fc, "Buffer", "DOUBLE")
@@ -370,12 +404,11 @@ def multiRingBufferNoOverlap(in_features, id_field, output_fc,
             in_id = r[0]
             in_point = r[1]
             if buffer_field:
-                buffer_distances = [float(s) for s in str(r[2]).split(',')]
+                buffer_distances = [float(s) for s in str(r[2]).split(",")]
             h_pt = HandyPoint(in_id, in_point, sr=sr)
             for buffer_distance in buffer_distances:
                 h_attr = HandyAttribute("Buffer", "Double", buffer_distance)
-                h_poly = HandyPolygon(in_id, h_pt.shape.buffer(buffer_distance),
-                                      sr=sr)
+                h_poly = HandyPolygon(in_id, h_pt.shape.buffer(buffer_distance), sr=sr)
                 h_poly.addAttribute(h_attr)
                 x_attr = HandyAttribute("orig_x", "Double", h_poly.shape.centroid.X)
                 y_attr = HandyAttribute("orig_y", "Double", h_poly.shape.centroid.Y)
@@ -388,19 +421,27 @@ def multiRingBufferNoOverlap(in_features, id_field, output_fc,
     for this_buffer, rev_buffer in zip(all_buffers, revised_buffers):
         cutters = []
         for other_buffer in all_buffers:
-            if this_buffer.ID != other_buffer.ID and not this_buffer.shape.disjoint(other_buffer.shape):
+            if this_buffer.ID != other_buffer.ID and not this_buffer.shape.disjoint(
+                other_buffer.shape
+            ):
                 # compare this buffer and the other buffer, cut if there is overlap
                 intersect_points = this_buffer.shape.intersect(other_buffer.shape, 1)
                 if intersect_points.partCount > 1:
                     ###
                     ####
-                    from_pt = arcpy.PointGeometry(intersect_points.getPart(0)).projectAs(sr)
-                    to_pt = arcpy.PointGeometry(intersect_points.getPart(1)).projectAs(sr)
+                    from_pt = arcpy.PointGeometry(
+                        intersect_points.getPart(0)
+                    ).projectAs(sr)
+                    to_pt = arcpy.PointGeometry(intersect_points.getPart(1)).projectAs(
+                        sr
+                    )
                     angle_ft = from_pt.angleAndDistanceTo(to_pt, "PLANAR")[0]
                     angle_tf = to_pt.angleAndDistanceTo(from_pt, "PLANAR")[0]
                     new_to = to_pt.pointFromAngleAndDistance(angle_ft, 10, "PLANAR")
                     new_from = from_pt.pointFromAngleAndDistance(angle_tf, 10, "PLANAR")
-                    cutter = arcpy.Polyline(arcpy.Array([new_from.centroid, new_to.centroid])).projectAs(sr)
+                    cutter = arcpy.Polyline(
+                        arcpy.Array([new_from.centroid, new_to.centroid])
+                    ).projectAs(sr)
                     cutters.append(cutter)
         # Cut up the polygon and keep the pieces nearest the original input point
         # _TEMP = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\Fair_WE\TOD_buildout.gdb\cutters"
@@ -413,7 +454,9 @@ def multiRingBufferNoOverlap(in_features, id_field, output_fc,
             if not this_shape.disjoint(cutter):
                 cuts = this_shape.cut(cutter)
                 this_orig_xy = arcpy.Point(
-                    this_buffer.attributes["orig_x"].value, this_buffer.attributes["orig_y"].value)
+                    this_buffer.attributes["orig_x"].value,
+                    this_buffer.attributes["orig_y"].value,
+                )
                 for cut in cuts:
                     if cut.contains(this_orig_xy):
                         rev_buffer.shape = cut
@@ -437,15 +480,25 @@ def multiRingBufferNoOverlap(in_features, id_field, output_fc,
     arcpy.AddMessage("...writing output features")
     with arcpy.da.InsertCursor(output_fc, [id_field, "Buffer", "SHAPE@"]) as c:
         for rev_buffer in revised_buffers:
-            c.insertRow([rev_buffer.ID, rev_buffer.attributes['Buffer'].value,
-                         rev_buffer.shape])
+            c.insertRow(
+                [rev_buffer.ID, rev_buffer.attributes["Buffer"].value, rev_buffer.shape]
+            )
     return output_fc
 
 
-def multiRingServiceAreaNoOverlap(in_features, id_field, output_fc, network_dataset,
-                                  impedance_attribute, restrictions,
-                                  sr=None, buffer_distances=[], buffer_field=None,
-                                  detailed_polygons=False, trim_polygons_value='500 Feet'):
+def multiRingServiceAreaNoOverlap(
+    in_features,
+    id_field,
+    output_fc,
+    network_dataset,
+    impedance_attribute,
+    restrictions,
+    sr=None,
+    buffer_distances=[],
+    buffer_field=None,
+    detailed_polygons=False,
+    trim_polygons_value="500 Feet",
+):
     ##    in_layer = arcpy.MakeFeatureLayer_management(in_features, "xx__MRSANO_in__xx", # str(uuid.uuid1())
     ##                                                 where_clause=in_expression)
     if not sr:
@@ -457,30 +510,47 @@ def multiRingServiceAreaNoOverlap(in_features, id_field, output_fc, network_data
 
     # manage output_fc
     arcpy.AddMessage("creating output feature class")
-    out_ws, out_name = output_fc.rsplit('\\', 1)
+    out_ws, out_name = output_fc.rsplit("\\", 1)
     if arcpy.Exists(output_fc):
         arcpy.Delete_management(output_fc)
 
     # create and solve service area problem
     na_layer_name = "SA_{}".format(_cleanUUID(uuid.uuid1()))
     if not buffer_distances:
-        buffer_distances = '1000'
+        buffer_distances = "1000"
     elif type(buffer) is list:
         buffer_distances = " ".join([str(bd) for bd in buffer_distances])
-    arcpy.MakeServiceAreaLayer_na(network_dataset, na_layer_name, impedance_attribute,
-                                  restriction_attribute_name=restrictions,
-                                  default_break_values=buffer_distances, polygon_type=polygon_type,
-                                  merge="NO_OVERLAP", nesting_type="DISKS", line_type="NO_LINES",
-                                  polygon_trim="TRIM_POLYS", poly_trim_value=trim_polygons_value,
-                                  hierarchy="NO_HIERARCHY", UTurn_policy="ALLOW_UTURNS")
+    arcpy.MakeServiceAreaLayer_na(
+        network_dataset,
+        na_layer_name,
+        impedance_attribute,
+        restriction_attribute_name=restrictions,
+        default_break_values=buffer_distances,
+        polygon_type=polygon_type,
+        merge="NO_OVERLAP",
+        nesting_type="DISKS",
+        line_type="NO_LINES",
+        polygon_trim="TRIM_POLYS",
+        poly_trim_value=trim_polygons_value,
+        hierarchy="NO_HIERARCHY",
+        UTurn_policy="ALLOW_UTURNS",
+    )
 
     field_mappings = "Name {} #".format(id_field)
     if buffer_field:
-        field_mappings = ";".join([field_mappings,
-                                   "Breaks_{} {} #".format(impedance_attribute, buffer_field)])
-    arcpy.AddLocations_na(na_layer_name, "Facilities", in_features, field_mappings, "5000 Meters",
-                          match_type="MATCH_TO_CLOSEST", append="CLEAR",
-                          exclude_restricted_elements="EXCLUDE")
+        field_mappings = ";".join(
+            [field_mappings, "Breaks_{} {} #".format(impedance_attribute, buffer_field)]
+        )
+    arcpy.AddLocations_na(
+        na_layer_name,
+        "Facilities",
+        in_features,
+        field_mappings,
+        "5000 Meters",
+        match_type="MATCH_TO_CLOSEST",
+        append="CLEAR",
+        exclude_restricted_elements="EXCLUDE",
+    )
     arcpy.Solve_na(na_layer_name, "SKIP", "TERMINATE")
 
     # add id field back to polygons outputs
@@ -488,11 +558,13 @@ def multiRingServiceAreaNoOverlap(in_features, id_field, output_fc, network_data
     arcpy.AddFieldToAnalysisLayer_na(na_layer_name, "Polygons", id_field, id_field_type)
 
     # export outputs
-    arcpy.CopyFeatures_management("{}\\Polygons".format(na_layer_name), "in_memory\\out_features")
+    arcpy.CopyFeatures_management(
+        "{}\\Polygons".format(na_layer_name), "in_memory\\out_features"
+    )
     arcpy.Project_management("in_memory\\out_features", output_fc, sr)
     with arcpy.da.UpdateCursor(output_fc, ["Name", id_field]) as c:
         for r in c:
-            _id = r[0].split(' : ')[0]
+            _id = r[0].split(" : ")[0]
             r[1] = _id
             c.updateRow(r)
 
@@ -501,20 +573,21 @@ def multiRingServiceAreaNoOverlap(in_features, id_field, output_fc, network_data
 
 # Features to centroids
 # ------------------------------------------------------------------------------------
-def FeaturesToCentroids(in_features, id_field, output_fc, where_clause=None,
-                        weight_field=None, sr=None):
+def FeaturesToCentroids(
+    in_features, id_field, output_fc, where_clause=None, weight_field=None, sr=None
+):
     # setup output_dtype:
     id_field_dtype = _getFieldDType(in_features, id_field)
-    dt_list = [(id_field, id_field_dtype), ("SHAPE@X", '<f8'), ("SHAPE@Y", '<f8')]
+    dt_list = [(id_field, id_field_dtype), ("SHAPE@X", "<f8"), ("SHAPE@Y", "<f8")]
 
     # dump in_features to array and convert to pd data frame
     arcpy.AddMessage("creating pandas data frame from input features")
     if not sr:
         sr = arcpy.Describe(in_polygons).spatialReference
     fields = [id_field] + groupd_fields + weight_fields + ["SHAPE@X", "SHAPE@Y"]
-    array = arcpy.da.FeatureClassToNumPyArray(in_polygons, fields,
-                                              where_clause=where_clause,
-                                              spatial_reference=sr)
+    array = arcpy.da.FeatureClassToNumPyArray(
+        in_polygons, fields, where_clause=where_clause, spatial_reference=sr
+    )
     df = pd.DataFrame(array)
 
     # summarize (weighted) cental points
@@ -524,9 +597,11 @@ def FeaturesToCentroids(in_features, id_field, output_fc, where_clause=None,
         weight_field_dtype = _getFieldDType(in_features, weight_field)
         dt_list.append((weight_field, weight_field_dtype))
         # create product sums
-        for coord in ['X', 'Y']:
+        for coord in ["X", "Y"]:
             df["SHAPE@{}_".format(coord)] = df["SHAPE@{}".format(coord)]
-            df["SHAPE@{}".format(coord)] = df["SHAPE@{}_".format(coord)] * df[weight_field]
+            df["SHAPE@{}".format(coord)] = (
+                df["SHAPE@{}_".format(coord)] * df[weight_field]
+            )
         df_sum = df.groupby([id_field])["SHAPE@X", "SHAPE@Y", weight_field].sum()
     else:
         df_sum = df.groupby([id_field])["SHAPE@X", "SHAPE@Y"].sum()
@@ -534,32 +609,52 @@ def FeaturesToCentroids(in_features, id_field, output_fc, where_clause=None,
 
     # export output
     arcpy.AddMessage("writing output features")
-    arcpy.da.NumPyArrayToFeatureClass(out_array, output_fc, ["SHAPE@X", "SHAPE@Y"],
-                                      spatial_reference=sr)
+    arcpy.da.NumPyArrayToFeatureClass(
+        out_array, output_fc, ["SHAPE@X", "SHAPE@Y"], spatial_reference=sr
+    )
     return output_fc
 
 
 # Create fishnet
 # ------------------------------------------------------------------------------------
-def createFishnet(in_features, output_fc, cell_width=None, cell_height=None,
-                  number_of_rows=None, number_of_columns=None,
-                  geometry_type="POLYGON", where_clause=None, sr=None,
-                  create_label_points=False):
+def createFishnet(
+    in_features,
+    output_fc,
+    cell_width=None,
+    cell_height=None,
+    number_of_rows=None,
+    number_of_columns=None,
+    geometry_type="POLYGON",
+    where_clause=None,
+    sr=None,
+    create_label_points=False,
+):
     if not sr:
         sr = arcpy.Describe(in_features).spatialReference
     if create_label_points:
         labels = "LABELS"
     else:
         labels = "NO_LABELS"
-    arcpy.AddMessage('Finding extents')
-    origin, y_coord, opposite_corner = _createFishnetCoords(in_features, where_clause=where_clause, sr=sr)
-    arcpy.AddMessage('Creating fishnet featuers')
-    arcpy.CreateFishnet_management(output_fc, origin, y_coord, cell_width, cell_height,
-                                   number_of_rows, number_of_columns, opposite_corner,
-                                   labels, geometry_type=geometry_type)
+    arcpy.AddMessage("Finding extents")
+    origin, y_coord, opposite_corner = _createFishnetCoords(
+        in_features, where_clause=where_clause, sr=sr
+    )
+    arcpy.AddMessage("Creating fishnet featuers")
+    arcpy.CreateFishnet_management(
+        output_fc,
+        origin,
+        y_coord,
+        cell_width,
+        cell_height,
+        number_of_rows,
+        number_of_columns,
+        opposite_corner,
+        labels,
+        geometry_type=geometry_type,
+    )
     arcpy.DefineProjection_management(output_fc, sr)
     # create a cell ID field
-    arcpy.AddMessage('Updating cell id')
+    arcpy.AddMessage("Updating cell id")
     arcpy.AddField_management(output_fc, "CELL_ID", "LONG")
     cell_id = 1
     with arcpy.da.UpdateCursor(output_fc, "CELL_ID") as c:

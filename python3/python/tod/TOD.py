@@ -126,14 +126,14 @@ STATION_TYPE_DEFAULTS = {
     #     "res_grad": "Default Res Mix",
     # },
     "Downtown Employment - BRT": {
-            "res_target": 8000,
-            "job_target": 18000,
-            "hot_target": 500,
-            "min_hot_sz": 100,
-            "buff_area": 2640,
-            "dens_grad": "Downtown Employment Density",
-            "res_grad": "Downtown Employment Mix",
-        },
+        "res_target": 8000,
+        "job_target": 18000,
+        "hot_target": 500,
+        "min_hot_sz": 100,
+        "buff_area": 2640,
+        "dens_grad": "Downtown Employment Density",
+        "res_grad": "Downtown Employment Mix",
+    },
     "Downtown Neighborhood - BRT": {
         "res_target": 8000,
         "job_target": 4000,
@@ -233,7 +233,6 @@ GRADIENT_DEFAULTS = {
         "to_val": [500, 1000, 1500, 2000, 2500, 5280],
         "weight": [100, 75, 55, 35, 25, 5],
     },
-
 }
 
 
@@ -248,14 +247,14 @@ class TransitTech(object):
     """
 
     def __init__(
-            self,
-            name,
-            res_target,
-            job_target,
-            hotel_target,
-            speed_target,
-            spacing_short,
-            spacing_long,
+        self,
+        name,
+        res_target,
+        job_target,
+        hotel_target,
+        speed_target,
+        spacing_short,
+        spacing_long,
     ):
         self.name = name
         self.res_target = res_target
@@ -276,15 +275,15 @@ class StationType(object):
     """
 
     def __init__(
-            self,
-            name,
-            res_target,
-            job_target,
-            hotel_target,
-            min_hotel_size=50,
-            buffer_area=None,
-            density_gradient=None,
-            res_mix_gradient=None,
+        self,
+        name,
+        res_target,
+        job_target,
+        hotel_target,
+        min_hotel_size=50,
+        buffer_area=None,
+        density_gradient=None,
+        res_mix_gradient=None,
     ):
         self.name = name
         self.res_target = res_target
@@ -550,14 +549,14 @@ class Station(object):
 
 class DevArea(object):
     def __init__(
-            self,
-            name,
-            shape,
-            sr,
-            existing_res_activity=0.0,
-            existing_job_activity=0.0,
-            existing_hotel_activity=0.0,
-            area=1.0,
+        self,
+        name,
+        shape,
+        sr,
+        existing_res_activity=0.0,
+        existing_job_activity=0.0,
+        existing_hotel_activity=0.0,
+        area=1.0,
     ):
         self.area = area
         self.name = str(name)
@@ -657,7 +656,7 @@ def _allocate(total, array, sum_attr, weight_attr, control_attr=None, min_value=
 
 
 def _devAreasToNpArray(
-        dev_areas, sum_attr, weight_attr, control_attr=None, use_suitability=False
+    dev_areas, sum_attr, weight_attr, control_attr=None, use_suitability=False
 ):
     rows = []
     for dev_area in dev_areas:
@@ -814,7 +813,7 @@ def _generateTemplateReferences(in_gdb):
 
 
 def _addStationsToCorridor(
-        corridor_obj, stations_fc, station_types_dict, technology_name, sr
+    corridor_obj, stations_fc, station_types_dict, technology_name, sr
 ):
     station_fields = ["stn_order", "stn_name", "stn_type", "SHAPE@"]
     with arcpy.da.SearchCursor(stations_fc, station_fields) as c:
@@ -828,21 +827,21 @@ def _addStationsToCorridor(
 
 
 def _addDevAreasFromFishnet(
-        stations_dict,
-        fishnet_fc,
-        fishnet_id,
-        station_name_field,
-        suitability_field=None,
-        where_clause=None,
-        sr=None,
-        weight_by_area=False,
+    stations_dict,
+    fishnet_fc,
+    fishnet_id,
+    station_name_field,
+    suitability_field=None,
+    where_clause=None,
+    sr=None,
+    weight_by_area=False,
 ):
     if suitability_field:
         fields = [fishnet_id, station_name_field, suitability_field, "SHAPE@"]
     else:
         fields = [fishnet_id, station_name_field, "SHAPE@"]
     with arcpy.da.SearchCursor(
-            fishnet_fc, fields, where_clause=where_clause, spatial_reference=sr
+        fishnet_fc, fields, where_clause=where_clause, spatial_reference=sr
     ) as c:
         for r in c:
             dev_area_name = r[0]
@@ -869,19 +868,19 @@ def _addDevAreasFromFishnet(
 
 
 def applyTODTemplates(
-        in_gdb,
-        fishnet_fc,
-        fishnet_id,
-        technology_name,
-        fishnet_suitability_field=None,
-        fishnet_where_clause="",
-        sr=None,
-        network_dataset=None,
-        impedance_attribute=None,
-        restrictions=None,
-        preset_stations_field=None,
-        weight_by_area=False,
-        share_threshold=0.0,
+    in_gdb,
+    fishnet_fc,
+    fishnet_id,
+    technology_name,
+    fishnet_suitability_field=None,
+    fishnet_where_clause="",
+    sr=None,
+    network_dataset=None,
+    impedance_attribute=None,
+    restrictions=None,
+    preset_stations_field=None,
+    weight_by_area=False,
+    share_threshold=0.0,
 ):
     # generate supporting objects
     fishnet_id_dtype = HandyGP._getFieldDType(fishnet_fc, fishnet_id)
@@ -1040,17 +1039,17 @@ def applyTODTemplates(
 # TOD GEOPROCESSOR SUPPORT FUNCTIONS
 # ----------------------------------------------------------------------------------------------
 def createStationTypesFromTable(
-        in_table,
-        station_type_field,
-        res_target_field,
-        job_target_field,
-        hotel_target_field,
-        density_gradient_field=None,
-        res_mix_gradient_field=None,
-        gradients_dict=None,
-        buffer_area_field=None,
-        min_hotel_size_field=None,
-        where_clause=None,
+    in_table,
+    station_type_field,
+    res_target_field,
+    job_target_field,
+    hotel_target_field,
+    density_gradient_field=None,
+    res_mix_gradient_field=None,
+    gradients_dict=None,
+    buffer_area_field=None,
+    min_hotel_size_field=None,
+    where_clause=None,
 ):
     fields = [
         station_type_field,
@@ -1104,7 +1103,7 @@ def createStationTypesFromTable(
 
 
 def createGradientsFromTable(
-        in_table, gradient_field, from_field, to_field, weight_field, where_clause=None
+    in_table, gradient_field, from_field, to_field, weight_field, where_clause=None
 ):
     gradients = {}
     gradient_field_type = HandyGP._getFieldTypeName(in_table, gradient_field)
@@ -1113,7 +1112,7 @@ def createGradientsFromTable(
         quotes = "'"
     fields = [from_field, to_field, weight_field]
     with arcpy.da.SearchCursor(
-            in_table, gradient_field, where_clause=where_clause
+        in_table, gradient_field, where_clause=where_clause
     ) as c:
         gradient_names = sorted({r[0] for r in c})
 
@@ -1137,15 +1136,15 @@ def createGradientsFromTable(
 
 
 def createTechnologiesFromTable(
-        in_table,
-        technology_field,
-        res_target_field,
-        job_target_field,
-        hotel_target_field,
-        speed_target_field,
-        spacing_short_field,
-        spacing_long_field,
-        where_clause=None,
+    in_table,
+    technology_field,
+    res_target_field,
+    job_target_field,
+    hotel_target_field,
+    speed_target_field,
+    spacing_short_field,
+    spacing_long_field,
+    where_clause=None,
 ):
     fields = [
         technology_field,
@@ -1204,13 +1203,13 @@ def _populateTableFromDict(in_table, name_field, fields, in_dict, multirow=False
 # SCENARIO GEOPROCESSORS
 # ----------------------------------------------------------------------------------------------
 def MultipatchToFootprint(
-        multipatch_fc,
-        footprints_fc,
-        group_field=None,
-        expression=None,
-        estimate_volume=False,
-        sr=None,
-        volume_to_cumulative_area_factor=None,
+    multipatch_fc,
+    footprints_fc,
+    group_field=None,
+    expression=None,
+    estimate_volume=False,
+    sr=None,
+    volume_to_cumulative_area_factor=None,
 ):
     """
     Convert a multipach feature class to footprints.
@@ -1232,7 +1231,7 @@ def MultipatchToFootprint(
     arcpy.AddMessage("calculating footprint areas")
     arcpy.AddField_managment(footprints_fc, "calc_area", "DOUBLE")
     with arcpy.da.UpdateCursor(
-            footprints_fc, ["SHAPE@", "calc_area"], spatial_reference=sr
+        footprints_fc, ["SHAPE@", "calc_area"], spatial_reference=sr
     ) as c:
         for r in c:
             poly = r[0]
@@ -1264,15 +1263,15 @@ def MultipatchToFootprint(
 
 # summarizeFloorAreaInFishnet
 def summarizeFloorAreaInFishnet(
-        fishnet_features,
-        fishnet_id_field,
-        building_features,
-        output_features,
-        building_case_fields=[],
-        building_where_clause=None,
-        sr=None,
-        building_floor_area_field=None,
-        bldg_vol_to_fl_area_factor=12.0,
+    fishnet_features,
+    fishnet_id_field,
+    building_features,
+    output_features,
+    building_case_fields=[],
+    building_where_clause=None,
+    sr=None,
+    building_floor_area_field=None,
+    bldg_vol_to_fl_area_factor=12.0,
 ):
     convert_3d_To_2d = False
     desc = arcpy.Describe(building_features)
@@ -1316,17 +1315,17 @@ def summarizeFloorAreaInFishnet(
 
 # post process results to account for existing/committed activity
 def adjustTargetsBasedOnExisting(
-        dev_areas_table,
-        id_field,
-        station_area_field,
-        existing_hh_field,
-        target_hh_field,
-        existing_job_field,
-        target_job_field,
-        existing_hotel_field,
-        target_hotel_field,
-        out_table,
-        where_clause=None,
+    dev_areas_table,
+    id_field,
+    station_area_field,
+    existing_hh_field,
+    target_hh_field,
+    existing_job_field,
+    target_job_field,
+    existing_hotel_field,
+    target_hotel_field,
+    out_table,
+    where_clause=None,
 ):
     # dump dev_areas_table to dataframe
     fields = [
@@ -1353,7 +1352,7 @@ def adjustTargetsBasedOnExisting(
         print(station_area)
         station_dev_areas = dev_areas_df[
             dev_areas_df[station_area_field] == station_area
-            ].copy()
+        ].copy()
         # existng_hh_total = sum(station_dev_areas[existing_hh_field])
         # target_hh_total = sum(station_dev_areas[existing_hh_field])
         print("housing")
@@ -1396,15 +1395,15 @@ def adjustTargetsBasedOnExisting(
 
 # post process results to account for existing/committed activity
 def adjustTargetsBasedOnExisting2(
-        dev_areas_table, 
-        id_field, 
-        station_area_field, 
-        existing_fields, 
-        target_fields, 
-        out_fields, 
-        out_table, 
-        where_clause=None
-        ):
+    dev_areas_table,
+    id_field,
+    station_area_field,
+    existing_fields,
+    target_fields,
+    out_fields,
+    out_table,
+    where_clause=None,
+):
     # dump dev_areas_table to dataframe
     fields = [id_field, station_area_field] + existing_fields + target_fields
     unique_fields = list(set(fields))
@@ -1419,13 +1418,14 @@ def adjustTargetsBasedOnExisting2(
     station_areas = np.unique(dev_areas_df[station_area_field])
     result_dfs = []
     for station_area in station_areas:
-        print('...{}'.format(station_area))
+        print("...{}".format(station_area))
         station_dev_areas = dev_areas_df[
             dev_areas_df[station_area_field] == station_area
-            ].copy()
+        ].copy()
         # Update field values
         for ex_field, tgt_field, out_field in zip(
-            existing_fields, target_fields, out_fields):
+            existing_fields, target_fields, out_fields
+        ):
             station_dev_areas = _adjustTargets(
                 station_dev_areas, id_field, tgt_field, ex_field, out_field
             )
@@ -1438,6 +1438,7 @@ def adjustTargetsBasedOnExisting2(
     df_out = df_stack[df_out_fields]
     array_out = np.array(df_out.to_records(index=False), dtype=np.dtype(dt_list))
     arcpy.da.NumPyArrayToTable(array_out, out_table)
+
 
 def _adjustTargets(df, id_field, target_field, existing_field, result_field, depth=0):
     if sum(df[target_field]) == 0:
@@ -1482,7 +1483,7 @@ def _adjustTargets(df, id_field, target_field, existing_field, result_field, dep
 
             # What is the amount by which each cell with a positive gap share needs to decrease?
             df_copy["__adjustment__"] = (
-                    df_copy["__gap_share__"] * total_adjustment_increment
+                df_copy["__gap_share__"] * total_adjustment_increment
             )
 
             # What is the new target at adjusted cells?

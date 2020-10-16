@@ -62,11 +62,9 @@ def generate_suitability(
     # read in suitability shapes (tesselation or other (ie..parcels) to gdb
     suit_fc_name, ext = path.splitext(path.split(in_suit_fc)[1])
     suit_fc = arcpy.FeatureClassToFeatureClass_conversion(
-        in_features=in_suit_fc, out_path=out_gdb, out_name=suit_fc_name,
+        in_features=in_suit_fc, out_path=out_gdb, out_name=suit_fc_name
     )
-    arcpy.AddIndex_management(
-        in_table=suit_fc, fields=[id_field], index_name="ID_IDX",
-    )
+    arcpy.AddIndex_management(in_table=suit_fc, fields=[id_field], index_name="ID_IDX")
     # Dump the table to a data frame
     fields = [
         id_field,
@@ -156,16 +154,13 @@ def generate_suitability(
     # The parcel has no pipeline dev AND (is either a DO site OR a LU that could develop)
     _include_ = np.logical_and(
         df["pipe_include"] == 1,
-        np.logical_or(
-            df[is_do_field] == 1,
-            df["lu_include"] == 1
-        )
-    )   
+        np.logical_or(df[is_do_field] == 1, df["lu_include"] == 1),
+    )
     df["full_include"] = np.select([_include_], [1.0], 0.0)
     df["tot_suit"] = df.raw_suit * df.full_include
     # df["tot_suit"] = (
     #     #df[[is_do_field, "lu_include", "pipe_include"]].max(axis=1) * df.raw_suit
-        
+
     #     df[["lu_include", "pipe_include"]].min(axis=1) * df.raw_suit
     # )
 
@@ -199,9 +194,7 @@ if __name__ == "__main__":
     in_suit_fc = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\LCBRT_data.gdb\parcels"
     stations = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\LCBRT_data.gdb\stations_LCRT_BRT_scenarios_20200814"
     stations_wc = arcpy.AddFieldDelimiters(stations, "WE_Sum") + " <> 'NA'"
-    station_buffers = (
-        r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\temp\TOD_TestRun\TOD_TEST_CR.gdb\walksheds"
-    )
+    station_buffers = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\temp\TOD_TestRun\TOD_TEST_CR.gdb\walksheds"
     id_field = "ParclID"
     is_do_field = "DO_Site"
     do_prop_field = "DOSProp"
@@ -210,11 +203,13 @@ if __name__ == "__main__":
     lu_field = "LandUse"
     pipe_field = "in_pipe"
     excl_lu = ["Recreation/Cultural", "Single-family", "Transportation", "Utilities"]
-    weights = {"in_DO": 0.6,
-               "is_vacant": 0.15,
-               "in_TOD": 0.05,
-               "in_walkshed": 0.1,
-               "dev_size": 0.1}  # (IS DOS, IsVacant, InTOD, InWalkShed, size)
+    weights = {
+        "in_DO": 0.6,
+        "is_vacant": 0.15,
+        "in_TOD": 0.05,
+        "in_walkshed": 0.1,
+        "dev_size": 0.1,
+    }  # (IS DOS, IsVacant, InTOD, InWalkShed, size)
     # weights = [0.60, 0.30, 0.10, 0.20]  # DO, IsVacant, dev arae, qm walk buffer IS DOS, IsVacant, InTOD, InWalkShed, size
     out_gdb = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\temp\TOD_TestRun\TOD_TEST_CR.gdb"
     # out_table = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\initial_suitability.dbf"
