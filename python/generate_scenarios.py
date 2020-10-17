@@ -275,6 +275,7 @@ par_est_fld_ref = {
     "Office": "Off",
     "Single-family": "SF",
     "Hospitality": "Hot",
+    "Hotel": "Hot",
     "Other": "Oth",
 }
 par_bld_sqft_field = "BldSqFt"
@@ -287,6 +288,7 @@ in_pipe_field = "in_pipe"
 excl_lu = ["Recreation/Cultural", "Single-family", "Transportation", "Utilities"]
 basecap_sqft = "EXP_Sqft"
 basecap_lu = "Exp_LU"
+    #TODO: Hotel is added to ExpLU categories
 
 # New/pipeline features
 newpipe_fc = "pipeline_with_pid"

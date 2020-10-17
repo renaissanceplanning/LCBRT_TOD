@@ -166,7 +166,7 @@ import numpy as np
 
 # %% WORKSPACES AND SCENARIO NAMES.
 
-project_dir = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA"
+project_dir = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3"
 source_gdb = str(Path(project_dir, "LCBRT_data.gdb"))
 scenarios_ws = str(Path(project_dir, "scenarios"))
 scenarios = ["WE_Sum", "WE_Fair"]

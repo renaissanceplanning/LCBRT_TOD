@@ -5,6 +5,17 @@ from pathlib import Path
 
 
 def get_group_id(group_name, owner):
+    """
+    connect to Arcgis portal then pulls the unique id value for a shared group
+    Args:
+        group_name: String
+            name of the group
+        owner: String
+            username/owner of the group
+
+    Returns:
+        String - unique id of the group
+    """
     gis = GIS(portal, user, password)
     try:
         group = gis.groups.search(query=f"title: {group_name} AND owner: {owner}")
@@ -13,7 +24,7 @@ def get_group_id(group_name, owner):
         return None
 
 
-''' Start setting variables '''
+''' CONFIGURATION '''
 # Set the path to the project
 scripts_folder = Path(__file__).resolve().parent.parent
 project_path = Path(scripts_folder, 'maps', 'LCBRT_maps', 'LCBRT_maps.aprx')
@@ -38,6 +49,19 @@ LOCAL_PATH = Path(scripts_folder, 'maps')
 
 
 def update_fs_from_map(pro_project, map_name, service_name):
+    """
+    Updates or publishes a new Feeature Service using an ArcPRO project with 
+    maps containing the data to be published
+    Args:
+        pro_project: String
+            path to an existing arcpro project containing map layers to be published
+        map_name: String
+            name of the map containgin the layers to be published
+        service_name: String
+            name of the map service to be updated or published
+    Returns: 
+        None - publishes the content to AGOL 
+    """
     # Local paths to create temporary content
     draft = Path(LOCAL_PATH, f"{service_name}_WebUpdate.sddraft")
     service_def = Path(LOCAL_PATH, f"{service_name}_WebUpdate.sd")
@@ -90,3 +114,12 @@ def update_fs_from_map(pro_project, map_name, service_name):
     if shr_to_org or shr_to_everyone or shr_with_groups:
         print("Setting sharing options…")
         feature_service.share(org=shr_to_org, everyone=shr_to_everyone, groups=shr_with_groups)
+
+
+if __name__ == "__main__":
+    for service in service_names:
+        update_fs_from_map(
+            pro_project=project_path, 
+            map_name=service, 
+            service_name=service
+            )

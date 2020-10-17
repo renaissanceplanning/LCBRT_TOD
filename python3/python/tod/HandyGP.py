@@ -109,18 +109,19 @@ class HandyGeometry(object):
 
 class HandyPoint(HandyGeometry):
     def __init__(self, ID, shape, sr=None):
-        super(HandyPoint, self).__init__(ID, shape, geometry_type="POINT", sr=sr)
+        # super(HandyPoint, self).__init__(ID, shape, geometry_type="POINT", sr=sr)
+        super().__init__(ID, shape, geometry_type="POINT", sr=sr)
 
 
 class HandyPolyline(HandyGeometry):
     def __int__(self, ID, shape, sr=None):
-        super(HandyPolyline, self).__init__(ID, shape, geometry_type="POLYLINE", sr=sr)
-
+        # super(HandyPolyline, self).__init__(ID, shape, geometry_type="POLYLINE", sr=sr)
+        super().__init__(ID, shape, geometry_type="POLYLINE", sr=sr)
 
 class HandyPolygon(HandyGeometry):
     def __int__(self, ID, shape, sr=None):
-        super(HandyPolyline, self).__init__(ID, shape, geometry_type="POLYGON", sr=sr)
-
+        # super(HandyPolyline, self).__init__(ID, shape, geometry_type="POLYGON", sr=sr)
+        super().__init__(ID, shape, geometry_type="POLYGON", sr=sr)
 
 # arcpy helpers
 # --------------------------------------------------------------------------
@@ -452,6 +453,8 @@ def multiRingBufferNoOverlap(
         for cutter in cutters:
             this_shape = rev_buffer.shape
             if not this_shape.disjoint(cutter):
+                if this_buffer.ID == 'Trident Technical College':
+                    print('found_you')
                 cuts = this_shape.cut(cutter)
                 this_orig_xy = arcpy.Point(
                     this_buffer.attributes["orig_x"].value,
