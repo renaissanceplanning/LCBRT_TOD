@@ -1,7 +1,7 @@
 import arcpy
-import os, sys
+from os import path, remove
 from arcgis.gis import GIS
-from pathlib import Path
+# from pathlib import Path
 
 
 def get_group_id(group_name, owner):
@@ -17,7 +17,7 @@ def get_group_id(group_name, owner):
 # Set the path to the project
 # scripts_folder = Path(__file__).resolve().parent.parent
 scripts_folder = r'K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scripts'
-project_path = Path(scripts_folder, 'maps', 'LCBRT_maps', 'LCBRT_maps.aprx')
+project_path = path.join(scripts_folder, 'maps', 'LCBRT_maps', 'LCBRT_maps.aprx')
 
 # user/password of the owner account
 portal = "http://www.arcgis.com"  # Can also reference a local portal
@@ -34,21 +34,20 @@ shr_with_groups = get_group_id(group_name='Low Country BRT - TOD',
 service_names = ["WE_Sum", "WE_Fair"]
 
 # local path
-LOCAL_PATH = Path(scripts_folder, 'maps')
+LOCAL_PATH = path.join(scripts_folder, 'maps')
 ''' End setting variables '''
 
 
 def update_fs_from_map(pro_project, map_name, service_name):
     # Local paths to create temporary content
-    draft = Path(LOCAL_PATH, f"{service_name}_WebUpdate.sddraft")
-    service_def = f"{service_name}_WebUpdate.sd"
-    service_def_path = Path(LOCAL_PATH, service_def)
+    draft_path = path.join(LOCAL_PATH, f"{service_name}_WebUpdate.sddraft")
+    service_def_path = path.join(LOCAL_PATH, f"{service_name}_WebUpdate.sd")
 
     #: Delete draft and definition if existing
-    for file_path in (draft, service_def_path):
-        if file_path.exists():  #: This check can be replaced in 3.8 with missing_ok=True
+    for file_path in (draft_path, service_def_path):
+        if path.exists(file_path):  #: This check can be replaced in 3.8 with missing_ok=True
             print(f'deleting existing {file_path}...')
-            file_path.unlink()
+            remove(file_path)
 
     # Create a new SDDraft and stage to SD
     print("Creating SD file")
@@ -58,7 +57,7 @@ def update_fs_from_map(pro_project, map_name, service_name):
         if m.name == map_name:
             arcpy.mp.CreateWebLayerSDDraft(
                 map_or_layers=m,
-                out_sddraft=draft,
+                out_sddraft=draft_path,
                 service_name=service_name,
                 server_type='HOSTING_SERVER',
                 service_type='FEATURE_ACCESS',
@@ -67,8 +66,8 @@ def update_fs_from_map(pro_project, map_name, service_name):
                 copy_data_to_server=True,
                 enable_editing=True, )
             arcpy.StageService_server(
-                in_service_definition_draft=draft,
-                out_service_definition=service_def)
+                in_service_definition_draft=draft_path,
+                out_service_definition=service_def_path)
 
     print("Connecting to {}".format(portal))
     gis = GIS(portal, user, password)
@@ -79,13 +78,13 @@ def update_fs_from_map(pro_project, map_name, service_name):
         service_def_item = gis.content.search(query=f"title:{service_name} AND owner:{user}",
                                               item_type="Service Definition")[0]
         print(f"Found SD: {service_def_item.title}, ID: {service_def_item.id} n Uploading and overwriting…")
-        service_def_item.update(data=str(service_def))
+        service_def_item.update(data=str(service_def_path))
         print("Overwriting existing feature service…")
         feature_service = service_def_item.publish(overwrite=True)
     except:
         print("The service doesn't exist, creating new")
         print("...uploading new content")
-        source_item = gis.content.add(item_properties={}, data=str(service_def))
+        source_item = gis.content.add(item_properties={}, data=str(service_def_path))
         print("...publisihing new content")
         feature_service = source_item.publish()
 
