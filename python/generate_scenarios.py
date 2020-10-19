@@ -145,6 +145,7 @@ The key steps in the scenario generation process are outlined below:
 
 # %% IMPORTS
 import arcpy
+
 from suitability import generate_suitability
 from walksheds import generate_walksheds
 from existing_sqft import sqFtByLu
@@ -160,8 +161,9 @@ import pandas as pd
 import numpy as np
 
 # %% WORKSPACES AND SCENARIO NAMES.
-source_gdb = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb"
-scenarios_ws = r"D:\Users\IA7\Desktop\scenarios"
+project_dir = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3"
+source_gdb = path.join(project_dir, "LCBRT_data.gdb")
+scenarios_ws = path.join(project_dir, "scenarios")
 scenarios = ["WE_Sum", "WE_Fair"]
 arcpy.env.overwriteOutput = True
 
@@ -322,12 +324,10 @@ pipe_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + "LIKE '%Pipeline'"
 
 # Stations
 stations = "stations_LCRT_BRT_scenarios_20200814"
-st_type_emb_tbl = (
-    r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\tod_type_shares.csv"
-)
+st_type_emb_tbl = path.join(project_dir, "tables", "tod_type_shares.csv")
 
 # Network
-walk_net = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\LCBRT_data.gdb\network\walk_network_ND"
+walk_net = path.join(source_gdb, "network", "walk_network_ND")
 imp_field = "Length"
 cost = "1320"
 restrictions = None
@@ -337,9 +337,7 @@ taz = path.join(source_gdb, "TAZ_LCRT_SBF08122020v2")
 tid = "Big_TAZ"
 
 # Control variables
-control_tbl = (
-    r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv"
-)
+control_tbl = path.join(project_dir, "tables", "control_totals.csv")
 control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
 control_seg_attr = "segment"
 
@@ -358,13 +356,13 @@ chgcap_fields = genFieldList(suffix="ChgCap", include_untracked=False)  # Capaci
 
 # allocation fields
 alloc_fields = genFieldList(suffix="Alloc", include_untracked=False)  # allocated sqft in at buildout based on suitability, capacity for change and control sqft anticipated
-# buildout fields
-build_fields = genFieldList(suffix="Build", include_untracked=False)
+# future (2040) fields
+future_fields = genFieldList(suffix="Fut", include_untracked=False)     # 2040 sqft combines existing/pipeline and allocated sqft
 
 # FAR conversions for AGOL
 far_expi_fields = genFieldList(suffix="ExPi", measure="FAR", include_untracked=False)  # FAR for existing and pipeline
 far_alloc_fields = genFieldList(suffix="Alloc", measure="FAR", include_untracked=False)  # FAR allocated
-far_build_fields = genFieldList(suffix="build", measure="FAR", include_untracked=False)  # FAR available overall (TOD/non-TOD)
+far_future_fields = genFieldList(suffix="Fut", measure="FAR", include_untracked=False)  # FAR available overall after allocation TOD/non-TOD)
 
 # %% PROCESS
 try:
@@ -406,9 +404,7 @@ try:
             sr=scenarios_sr,
         )
 
-        # Check if sqft embellishments have been added already
-        #  (most of this is currently superfluous since we drop and recreate the gdb
-        #   with each run)
+        # extend station type table
         print "Extending station types table with embellishments..."
         st_type_tbl = path.join(scen_gdb, "station_area_types")
         type_emb = pd.read_csv(st_type_emb_tbl)
@@ -805,16 +801,16 @@ try:
             df_match_field=id_field,
         )
 
-        # populate buildout totals for each activity
-        print "Calculating buildout sqft totals..."
+        # populate 2040 totals for each activity
+        print "Calculating 2040 sqft totals..."
         for (
                 expi_field,
                 alloc_field,
-                build_field,
-        ) in zip(expi_fields, alloc_fields, build_fields):
-            arcpy.AddField_management(suit_fc, build_field, "LONG")
+                future_field,
+        ) in zip(expi_fields, alloc_fields, future_fields):
+            arcpy.AddField_management(suit_fc, future_field, "LONG")
             with arcpy.da.UpdateCursor(
-                    suit_fc, [expi_field, alloc_field, build_field]
+                    suit_fc, [expi_field, alloc_field, future_field]
             ) as cur:
                 for row in cur:
                     act_list = [val for val in row if val is not None]
@@ -823,8 +819,8 @@ try:
 
         # populate expi, alloc, and buildout parcel sum
         print "Calculating summary square footage for developement phases.."
-        sum_sf_fields = ["ExPi_SF_sum", "Alloc_SF_sum", "Build_SF_sum"]
-        activity_fields = [expi_fields, alloc_fields, build_fields]
+        sum_sf_fields = ["ExPi_SF_sum", "Alloc_SF_sum", "Future_SF_sum"]
+        activity_fields = [expi_fields, alloc_fields, future_fields]
         for summ, activities in zip(sum_sf_fields, activity_fields):
             arcpy.AddField_management(in_table=suit_fc, field_name=summ, field_type="LONG")
             print "\tAdding {} for each parcel...".format(summ)
@@ -840,7 +836,7 @@ try:
         FAR_phases = [
             [alloc_fields, far_alloc_fields],
             [expi_fields, far_expi_fields],
-            [build_fields, far_build_fields],
+            [future_fields, far_future_fields],
         ]
         for phase in FAR_phases:
             for act_sqft_field, act_far_field in zip(phase[0], phase[1]):
@@ -890,7 +886,7 @@ try:
                         + station_sum_fields
                         + expi_fields[:-1]
                         + alloc_fields
-                        + build_fields,
+                        + future_fields,
                 ) as cur:
                     for row in cur:
                         p_area, expi_far, alloc_far, build_far, \
@@ -910,7 +906,7 @@ try:
         # create Corridor Segment and TAZ summaries with conversion to RES and JOBS
         print "Generating Segment and TAZ summary tables..."
         taz = arcpy.FeatureClassToFeatureClass_conversion(in_features=taz, out_path=scen_gdb, out_name='taz')
-        p_fields = [id_field, "seg_num"] + expi_fields + alloc_fields + build_fields
+        p_fields = [id_field, "seg_num"] + expi_fields + alloc_fields + future_fields
         t_fields = [tid, "Share", "LCRT_H40", "LCRT_E40"]
         pwTAZ = arcpy.SpatialJoin_analysis(
             target_features=suit_fc, join_features=taz,
@@ -925,28 +921,28 @@ try:
         # segment summary
         seg_summaries = p_df.groupby(seg_id_field).sum()
         seg_summaries.drop(tid, axis=1, inplace=True)
-        seg_summaries["RES_build"] = (seg_summaries[build_fields[0]] / activity_sf_factors["SF"]) + (
-                seg_summaries[build_fields[1]] / activity_sf_factors["MF"]
+        seg_summaries["RES_2040"] = (seg_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
+                seg_summaries[future_fields[1]] / activity_sf_factors["MF"]
         )
-        seg_summaries["JOBS_build"] = (
-                (seg_summaries[build_fields[2]] / activity_sf_factors["Ret"])
-                + (seg_summaries[build_fields[3]] / activity_sf_factors["Ind"])
-                + (seg_summaries[build_fields[4]] / activity_sf_factors["Off"])
-        )  # + (seg_summaries[build_fields[5]] / activity_sf_factors["Hot"])
+        seg_summaries["JOBS_2040"] = (
+                (seg_summaries[future_fields[2]] / activity_sf_factors["Ret"])
+                + (seg_summaries[future_fields[3]] / activity_sf_factors["Ind"])
+                + (seg_summaries[future_fields[4]] / activity_sf_factors["Off"])
+        )  # + (seg_summaries[future_fields[5]] / activity_sf_factors["Hot"])
         seg_summaries.reset_index(inplace=True)
 
         # taz summary
         taz_summaries = p_df.groupby(tid).sum()
         taz_summaries.drop("seg_num", axis=1, inplace=True)
 
-        taz_summaries["RES_build"] = (taz_summaries[build_fields[0]] / activity_sf_factors["SF"]) + (
-                taz_summaries[build_fields[1]] / activity_sf_factors["MF"]
+        taz_summaries["RES_2040"] = (taz_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
+                taz_summaries[future_fields[1]] / activity_sf_factors["MF"]
         )
-        taz_summaries["JOBS_build"] = (
-                (taz_summaries[build_fields[2]] / activity_sf_factors["Ret"])
-                + (taz_summaries[build_fields[3]] / activity_sf_factors["Ind"])
-                + (taz_summaries[build_fields[4]] / activity_sf_factors["Off"])
-        )  # + (taz_summaries[buildout_flds[5]] / shares['Hot'])
+        taz_summaries["JOBS_2040"] = (
+                (taz_summaries[future_fields[2]] / activity_sf_factors["Ret"])
+                + (taz_summaries[future_fields[3]] / activity_sf_factors["Ind"])
+                + (taz_summaries[future_fields[4]] / activity_sf_factors["Off"])
+        )  # + (taz_summaries[future_fields[5]] / shares['Hot'])
         taz_summaries.reset_index(inplace=True)
 
         # write out tables
@@ -954,7 +950,7 @@ try:
         seg_summaries.to_csv(path.join(scen_ws, "seg_summary.csv"))
 
         # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
-        taz_sum_simple = taz_summaries[t_fields + ["RES_build", "JOBS_build"]]
+        taz_sum_simple = taz_summaries[t_fields + ["RES_2040", "JOBS_2040"]]
         extendTableDf(
             in_table=taz,
             table_match_field=tid,
@@ -963,20 +959,20 @@ try:
             append_only=False,
         )
         # update RES and JOBS to reflect proportion of full TAZ
-        arcpy.CalculateField_management(in_table=taz, field='RES_build',
-                                        expression="!RES_build! * !Share!",
+        arcpy.CalculateField_management(in_table=taz, field='RES_2040',
+                                        expression="!RES_2040! * !Share!",
                                         expression_type="PYTHON_9.3")
-        arcpy.CalculateField_management(in_table=taz, field='JOBS_build',
-                                        expression="!JOBS_build! * !Share!",
+        arcpy.CalculateField_management(in_table=taz, field='JOBS_2040',
+                                        expression="!JOBS_2040! * !Share!",
                                         expression_type="PYTHON_9.3")
         # calculate difference from current CoG estimates
         arcpy.AddField_management(in_table=taz, field_name="RES_diff", field_type="DOUBLE")
         arcpy.AddField_management(in_table=taz, field_name="JOBS_diff", field_type="DOUBLE")
         arcpy.CalculateField_management(in_table=taz, field="RES_diff",
-                                        expression="!RES_build! - !LCRT_H40!",
+                                        expression="!RES_2040! - !LCRT_H40!",
                                         expression_type="PYTHON_9.3")
         arcpy.CalculateField_management(in_table=taz, field="JOBS_diff",
-                                        expression="!JOBS_build! - !LCRT_E40!",
+                                        expression="!JOBS_2040! - !LCRT_E40!",
                                         expression_type="PYTHON_9.3")
         print "DONE!\n"
 

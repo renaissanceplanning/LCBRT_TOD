@@ -15,7 +15,8 @@ def get_group_id(group_name, owner):
 
 ''' Start setting variables '''
 # Set the path to the project
-scripts_folder = Path(__file__).resolve().parent.parent
+# scripts_folder = Path(__file__).resolve().parent.parent
+scripts_folder = r'K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scripts'
 project_path = Path(scripts_folder, 'maps', 'LCBRT_maps', 'LCBRT_maps.aprx')
 
 # user/password of the owner account
@@ -40,10 +41,11 @@ LOCAL_PATH = Path(scripts_folder, 'maps')
 def update_fs_from_map(pro_project, map_name, service_name):
     # Local paths to create temporary content
     draft = Path(LOCAL_PATH, f"{service_name}_WebUpdate.sddraft")
-    service_def = Path(LOCAL_PATH, f"{service_name}_WebUpdate.sd")
+    service_def = f"{service_name}_WebUpdate.sd"
+    service_def_path = Path(LOCAL_PATH, service_def)
 
     #: Delete draft and definition if existing
-    for file_path in (draft, service_def):
+    for file_path in (draft, service_def_path):
         if file_path.exists():  #: This check can be replaced in 3.8 with missing_ok=True
             print(f'deleting existing {file_path}...')
             file_path.unlink()
@@ -90,3 +92,11 @@ def update_fs_from_map(pro_project, map_name, service_name):
     if shr_to_org or shr_to_everyone or shr_with_groups:
         print("Setting sharing options…")
         feature_service.share(org=shr_to_org, everyone=shr_to_everyone, groups=shr_with_groups)
+
+
+if __name__ == "__main__":
+    for service in service_names:
+        update_fs_from_map(
+            pro_project=project_path,
+            map_name=service,
+            service_name=service)

@@ -118,7 +118,7 @@ class HandyPolyline(HandyGeometry):
 
 class HandyPolygon(HandyGeometry):
     def __int__(self, ID, shape, sr=None):
-        super(HandyPolyline, self).__init__(ID, shape, geometry_type="POLYGON", sr=sr)
+        super(HandyPolygon, self).__init__(ID, shape, geometry_type="POLYGON", sr=sr)
 
 
 # arcpy helpers
@@ -374,30 +374,33 @@ def multiRingBufferNoOverlap(in_features, id_field, output_fc,
             h_pt = HandyPoint(in_id, in_point, sr=sr)
             for buffer_distance in buffer_distances:
                 h_attr = HandyAttribute("Buffer", "Double", buffer_distance)
-                h_poly = HandyPolygon(in_id, h_pt.shape.buffer(buffer_distance),
-                                      sr=sr)
-                h_poly.addAttribute(h_attr)
-                x_attr = HandyAttribute("orig_x", "Double", h_poly.shape.centroid.X)
-                y_attr = HandyAttribute("orig_y", "Double", h_poly.shape.centroid.Y)
-                h_poly.addAttribute(x_attr)
-                h_poly.addAttribute(y_attr)
+                h_poly = HandyPolygon(ID=in_id, shape=h_pt.shape.buffer(buffer_distance), sr=sr)
+                h_poly.addAttribute(attr_obj=h_attr)
+                x_attr = HandyAttribute(name="orig_x", field_type="Double", value=h_poly.shape.centroid.X)
+                y_attr = HandyAttribute(name="orig_y", field_type="Double", value=h_poly.shape.centroid.Y)
+                h_poly.addAttribute(attr_obj=x_attr)
+                h_poly.addAttribute(attr_obj=y_attr)
                 all_buffers.append(h_poly)
 
     # evaluate buffer overlaps and trim polygons
     revised_buffers = [copy.copy(buffer) for buffer in all_buffers]
     for this_buffer, rev_buffer in zip(all_buffers, revised_buffers):
         cutters = []
+        # compare each buffer to all others in the list
         for other_buffer in all_buffers:
+            # confirm the two buffers arent the same shape, and that they overlap
             if this_buffer.ID != other_buffer.ID and not this_buffer.shape.disjoint(other_buffer.shape):
                 # compare this buffer and the other buffer, cut if there is overlap
                 intersect_points = this_buffer.shape.intersect(other_buffer.shape, 1)
                 if intersect_points.partCount > 1:
-                    ###
-                    ####
+                    # define intersection end points
                     from_pt = arcpy.PointGeometry(intersect_points.getPart(0)).projectAs(sr)
                     to_pt = arcpy.PointGeometry(intersect_points.getPart(1)).projectAs(sr)
+                    # calc angle from A to B
                     angle_ft = from_pt.angleAndDistanceTo(to_pt, "PLANAR")[0]
+                    # calc angle from B to A
                     angle_tf = to_pt.angleAndDistanceTo(from_pt, "PLANAR")[0]
+                    # update From To points by extending
                     new_to = to_pt.pointFromAngleAndDistance(angle_ft, 10, "PLANAR")
                     new_from = from_pt.pointFromAngleAndDistance(angle_tf, 10, "PLANAR")
                     cutter = arcpy.Polyline(arcpy.Array([new_from.centroid, new_to.centroid])).projectAs(sr)
