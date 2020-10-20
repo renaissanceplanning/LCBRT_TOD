@@ -921,10 +921,10 @@ try:
         # segment summary
         seg_summaries = p_df.groupby(seg_id_field).sum()
         seg_summaries.drop(tid, axis=1, inplace=True)
-        seg_summaries["RES_2040"] = (seg_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
+        seg_summaries["RES_2040"] = int(seg_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
                 seg_summaries[future_fields[1]] / activity_sf_factors["MF"]
         )
-        seg_summaries["JOBS_2040"] = (
+        seg_summaries["JOBS_2040"] = int(
                 (seg_summaries[future_fields[2]] / activity_sf_factors["Ret"])
                 + (seg_summaries[future_fields[3]] / activity_sf_factors["Ind"])
                 + (seg_summaries[future_fields[4]] / activity_sf_factors["Off"])
@@ -935,10 +935,10 @@ try:
         taz_summaries = p_df.groupby(tid).sum()
         taz_summaries.drop("seg_num", axis=1, inplace=True)
 
-        taz_summaries["RES_2040"] = (taz_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
+        taz_summaries["RES_2040"] = int(taz_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
                 taz_summaries[future_fields[1]] / activity_sf_factors["MF"]
         )
-        taz_summaries["JOBS_2040"] = (
+        taz_summaries["JOBS_2040"] = int(
                 (taz_summaries[future_fields[2]] / activity_sf_factors["Ret"])
                 + (taz_summaries[future_fields[3]] / activity_sf_factors["Ind"])
                 + (taz_summaries[future_fields[4]] / activity_sf_factors["Off"])
@@ -960,10 +960,10 @@ try:
         )
         # update RES and JOBS to reflect proportion of full TAZ
         arcpy.CalculateField_management(in_table=taz, field='RES_2040',
-                                        expression="!RES_2040! * !Share!",
+                                        expression="!RES_2040! * (!Share!/100)",
                                         expression_type="PYTHON_9.3")
         arcpy.CalculateField_management(in_table=taz, field='JOBS_2040',
-                                        expression="!JOBS_2040! * !Share!",
+                                        expression="!JOBS_2040! * (!Share!/100)",
                                         expression_type="PYTHON_9.3")
         # calculate difference from current CoG estimates
         arcpy.AddField_management(in_table=taz, field_name="RES_diff", field_type="DOUBLE")
