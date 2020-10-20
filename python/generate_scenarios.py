@@ -164,7 +164,7 @@ import numpy as np
 project_dir = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3"
 source_gdb = path.join(project_dir, "LCBRT_data.gdb")
 scenarios_ws = path.join(project_dir, "scenarios")
-scenarios = ["WE_Sum", "WE_Fair"]
+scenarios = ["WE_Sum"]
 arcpy.env.overwriteOutput = True
 
 # %% GLOBAL SETTINGS/SPECS
@@ -907,7 +907,7 @@ try:
         print "Generating Segment and TAZ summary tables..."
         taz = arcpy.FeatureClassToFeatureClass_conversion(in_features=taz, out_path=scen_gdb, out_name='taz')
         p_fields = [id_field, "seg_num"] + expi_fields + alloc_fields + future_fields
-        t_fields = [tid, "Share", "LCRT_H40", "LCRT_E40"]
+        t_fields = [tid, "Share"]
         pwTAZ = arcpy.SpatialJoin_analysis(
             target_features=suit_fc, join_features=taz,
             out_feature_class="in_memory\parcels_wTAZ", match_option="INTERSECT"
@@ -921,10 +921,10 @@ try:
         # segment summary
         seg_summaries = p_df.groupby(seg_id_field).sum()
         seg_summaries.drop(tid, axis=1, inplace=True)
-        seg_summaries["RES_2040"] = int(seg_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
+        seg_summaries["RES_2040"] = (seg_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
                 seg_summaries[future_fields[1]] / activity_sf_factors["MF"]
         )
-        seg_summaries["JOBS_2040"] = int(
+        seg_summaries["JOBS_2040"] = (
                 (seg_summaries[future_fields[2]] / activity_sf_factors["Ret"])
                 + (seg_summaries[future_fields[3]] / activity_sf_factors["Ind"])
                 + (seg_summaries[future_fields[4]] / activity_sf_factors["Off"])
@@ -935,10 +935,10 @@ try:
         taz_summaries = p_df.groupby(tid).sum()
         taz_summaries.drop("seg_num", axis=1, inplace=True)
 
-        taz_summaries["RES_2040"] = int(taz_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
+        taz_summaries["RES_2040"] = (taz_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
                 taz_summaries[future_fields[1]] / activity_sf_factors["MF"]
         )
-        taz_summaries["JOBS_2040"] = int(
+        taz_summaries["JOBS_2040"] = (
                 (taz_summaries[future_fields[2]] / activity_sf_factors["Ret"])
                 + (taz_summaries[future_fields[3]] / activity_sf_factors["Ind"])
                 + (taz_summaries[future_fields[4]] / activity_sf_factors["Off"])
@@ -950,7 +950,7 @@ try:
         seg_summaries.to_csv(path.join(scen_ws, "seg_summary.csv"))
 
         # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
-        taz_sum_simple = taz_summaries[t_fields + ["RES_2040", "JOBS_2040"]]
+        taz_sum_simple = taz_summaries[tid, "RES_2040", "JOBS_2040"]
         extendTableDf(
             in_table=taz,
             table_match_field=tid,
@@ -969,10 +969,10 @@ try:
         arcpy.AddField_management(in_table=taz, field_name="RES_diff", field_type="DOUBLE")
         arcpy.AddField_management(in_table=taz, field_name="JOBS_diff", field_type="DOUBLE")
         arcpy.CalculateField_management(in_table=taz, field="RES_diff",
-                                        expression="!RES_2040! - !LCRT_H40!",
+                                        expression="!RES_2040! - (!LCRT_H40! * (!Share!/100))",
                                         expression_type="PYTHON_9.3")
         arcpy.CalculateField_management(in_table=taz, field="JOBS_diff",
-                                        expression="!JOBS_2040! - !LCRT_E40!",
+                                        expression="!JOBS_2040! - (!LCRT_E40! * (!Share!/100))",
                                         expression_type="PYTHON_9.3")
         print "DONE!\n"
 
