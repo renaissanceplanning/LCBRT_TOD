@@ -164,7 +164,7 @@ import numpy as np
 project_dir = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3"
 source_gdb = path.join(project_dir, "LCBRT_data.gdb")
 scenarios_ws = path.join(project_dir, "scenarios")
-scenarios = ["WE_Sum", "WE_Fair"]
+scenarios = ["WE_Sum"]  #, "WE_Fair"
 arcpy.env.overwriteOutput = True
 
 # %% GLOBAL SETTINGS/SPECS
@@ -907,7 +907,7 @@ try:
         print "Generating Segment and TAZ summary tables..."
         taz = arcpy.FeatureClassToFeatureClass_conversion(in_features=taz, out_path=scen_gdb, out_name='taz')
         p_fields = [id_field, "seg_num"] + expi_fields + alloc_fields + future_fields
-        t_fields = [tid, "LCRT_H40", "LCRT_E40"]
+        t_fields = [tid]    #, "LCRT_H40", "LCRT_E40"
         pwTAZ = arcpy.SpatialJoin_analysis(
             target_features=suit_fc, join_features=taz,
             out_feature_class="in_memory\parcels_wTAZ", match_option="INTERSECT"
@@ -993,7 +993,7 @@ try:
 
         # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
         taz_sum_simple = taz_summaries[t_fields +
-                                       ["RES_EXPI", "JOBS_EXPI", "RES_alloc", "JOBS_alloc", "RES_2040", "JOBS_2040"]]
+                                       ["RES_EXPI", "JOBS_EXPI", "RES_ALLOC", "JOBS_ALLOC", "RES_2040", "JOBS_2040"]]
         extendTableDf(
             in_table=taz,
             table_match_field=tid,

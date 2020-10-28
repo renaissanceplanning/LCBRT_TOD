@@ -77,7 +77,7 @@ def update_fs_from_map(pro_project, map_name, service_name):
         print("Search for original SD on portal…")
         service_def_item = gis.content.search(query=f"title:{service_name} AND owner:{user}",
                                               item_type="Service Definition")[0]
-        print(f"Found SD: {service_def_item.title}, ID: {service_def_item.id} n Uploading and overwriting…")
+        print(f"Found SD: {service_def_item.title}, \n\tID: {service_def_item.id} \n...Uploading and overwriting…")
         service_def_item.update(data=str(service_def_path))
         print("Overwriting existing feature service…")
         feature_service = service_def_item.publish(overwrite=True)
