@@ -20,6 +20,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/scripts.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/scripts.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python/generate_scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/generate_scenarios.py" afterDir="false" />
     </list>
@@ -55,7 +57,7 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="JSON" />
     <property name="last_opened_file_path" value="K:/Projects/BCDCOG/Features/Files_For_RDB/RDB_V3/scripts" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -267,7 +269,14 @@
       <option name="project" value="LOCAL" />
       <updated>1603140249985</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="removed 'Share' attribute from grouping summaries (segment and TAZ)">
+      <created>1603723594355</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1603723594355</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -298,23 +307,28 @@
     <MESSAGE value="fix summary data for taz" />
     <MESSAGE value="format updates, fix to pipeline fields reference" />
     <MESSAGE value="fix to update_AGOL.py to us os.path in lieu of pathlib issues" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix to update_AGOL.py to us os.path in lieu of pathlib issues" />
+    <MESSAGE value="removed 'Share' attribute from grouping summaries (segment and TAZ)" />
+    <option name="LAST_COMMIT_MESSAGE" value="removed 'Share' attribute from grouping summaries (segment and TAZ)" />
   </component>
   <component name="WindowStateProjectService">
     <state x="698" y="309" key="#Notifications" timestamp="1599094503119">
       <screen x="0" y="0" width="1920" height="971" />
     </state>
     <state x="698" y="309" key="#Notifications/0.0.1920.971@0.0.1920.971" timestamp="1599094503119" />
+    <state x="733" y="126" key="#Plugins" timestamp="1603828414313">
+      <screen x="0" y="0" width="1920" height="971" />
+    </state>
+    <state x="733" y="126" key="#Plugins/0.0.1920.971@0.0.1920.971" timestamp="1603828414313" />
     <state x="-1192" y="327" key="#com.intellij.tools.ToolEditorDialog" timestamp="1599151721583">
       <screen x="-1920" y="0" width="1920" height="1040" />
     </state>
     <state x="-1192" y="327" key="#com.intellij.tools.ToolEditorDialog/1920.0.1920.1040/-1920.0.1920.1040/0.0.1920.1040@-1920.0.1920.1040" timestamp="1599151721583" />
-    <state x="587" y="62" key="CommitChangelistDialog2" timestamp="1603140249111">
+    <state x="587" y="62" key="CommitChangelistDialog2" timestamp="1603723592785">
       <screen x="0" y="0" width="1920" height="971" />
     </state>
     <state x="568" y="61" key="CommitChangelistDialog2/0.0.1920.961@0.0.1920.961" timestamp="1602692861077" />
     <state x="568" y="61" key="CommitChangelistDialog2/0.0.1920.963@0.0.1920.963" timestamp="1600225907476" />
-    <state x="587" y="62" key="CommitChangelistDialog2/0.0.1920.971@0.0.1920.971" timestamp="1603140249111" />
+    <state x="587" y="62" key="CommitChangelistDialog2/0.0.1920.971@0.0.1920.971" timestamp="1603723592785" />
     <state width="801" height="466" key="DebuggerActiveHint" timestamp="1602001180894">
       <screen x="0" y="0" width="1920" height="961" />
     </state>
@@ -435,26 +449,31 @@
       <screen x="0" y="0" width="1920" height="961" />
     </state>
     <state width="1899" height="316" key="GridCell.Tab.1.right/0.0.1920.961@0.0.1920.961" timestamp="1598651165547" />
-    <state x="598" y="286" key="MultipleFileMergeDialog" timestamp="1602081549303">
-      <screen x="0" y="0" width="1920" height="1050" />
+    <state x="368" y="97" key="MergeDialog" timestamp="1603723774472">
+      <screen x="0" y="0" width="1920" height="971" />
     </state>
+    <state x="368" y="97" key="MergeDialog/0.0.1920.971@0.0.1920.971" timestamp="1603723774472" />
+    <state x="598" y="264" width="1171" height="478" key="MultipleFileMergeDialog" timestamp="1603723774481">
+      <screen x="0" y="0" width="1920" height="971" />
+    </state>
+    <state x="598" y="264" width="1171" height="478" key="MultipleFileMergeDialog/0.0.1920.971@0.0.1920.971" timestamp="1603723774481" />
     <state x="598" y="286" key="MultipleFileMergeDialog/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1602081549303" />
-    <state x="461" y="130" key="SettingsEditor" timestamp="1602776771917">
+    <state x="461" y="130" width="1451" height="711" key="SettingsEditor" timestamp="1603828333625">
       <screen x="0" y="0" width="1920" height="971" />
     </state>
     <state x="461" y="129" key="SettingsEditor/0.0.1920.961@0.0.1920.961" timestamp="1601046842013" />
-    <state x="461" y="130" key="SettingsEditor/0.0.1920.971@0.0.1920.971" timestamp="1602776771917" />
+    <state x="461" y="130" width="1451" height="711" key="SettingsEditor/0.0.1920.971@0.0.1920.971" timestamp="1603828333625" />
     <state x="-1459" y="139" key="SettingsEditor/1920.0.1920.1040/-1920.0.1920.1040/0.0.1920.1040@-1920.0.1920.1040" timestamp="1599152594437" />
     <state x="747" y="196" width="782" height="569" key="VCS.ChangeListViewerDialog" timestamp="1601999288025">
       <screen x="0" y="0" width="1920" height="961" />
     </state>
     <state x="747" y="196" width="782" height="569" key="VCS.ChangeListViewerDialog/0.0.1920.961@0.0.1920.961" timestamp="1601999288025" />
-    <state x="552" y="218" key="Vcs.Push.Dialog.v2" timestamp="1603140251610">
+    <state x="552" y="218" key="Vcs.Push.Dialog.v2" timestamp="1603723853392">
       <screen x="0" y="0" width="1920" height="971" />
     </state>
     <state x="552" y="215" key="Vcs.Push.Dialog.v2/0.0.1920.961@0.0.1920.961" timestamp="1602692866843" />
     <state x="552" y="215" key="Vcs.Push.Dialog.v2/0.0.1920.963@0.0.1920.963" timestamp="1600225261974" />
-    <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.971@0.0.1920.971" timestamp="1603140251610" />
+    <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.971@0.0.1920.971" timestamp="1603723853392" />
     <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.973@0.0.1920.973" timestamp="1599102031261" />
     <state x="-1368" y="235" key="Vcs.Push.Dialog.v2/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@-1920.0.1920.1050" timestamp="1599147623448" />
     <state width="968" height="529" key="XDebugger.FullValuePopup" timestamp="1602688167719">
