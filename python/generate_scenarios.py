@@ -921,7 +921,17 @@ try:
         ''' segment summary '''
         seg_summaries = p_df.groupby(seg_id_field).sum()
         seg_summaries.drop(tid, axis=1, inplace=True)
-        # calc allocated jobs and housing
+        # calc EXPI jobs and housing
+        seg_summaries["RES_ALLOC"] = (seg_summaries[expi_fields[0]] / activity_sf_factors["SF"]) + (
+                seg_summaries[expi_fields[1]] / activity_sf_factors["MF"]
+        )
+        seg_summaries["JOBS_ALLOC"] = (
+                (seg_summaries[expi_fields[2]] / activity_sf_factors["Ret"])
+                + (seg_summaries[expi_fields[3]] / activity_sf_factors["Ind"])
+                + (seg_summaries[expi_fields[4]] / activity_sf_factors["Off"])
+        )  # + (seg_summaries[alloc_fields[5]] / activity_sf_factors["Hot"])
+
+        # calc ALLOC jobs and housing
         seg_summaries["RES_ALLOC"] = (seg_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) + (
                 seg_summaries[alloc_fields[1]] / activity_sf_factors["MF"]
         )
@@ -930,6 +940,7 @@ try:
                 + (seg_summaries[alloc_fields[3]] / activity_sf_factors["Ind"])
                 + (seg_summaries[alloc_fields[4]] / activity_sf_factors["Off"])
         )  # + (seg_summaries[alloc_fields[5]] / activity_sf_factors["Hot"])
+
         # calculate 2040 estimate of Jobs and Housing
         seg_summaries["RES_2040"] = (seg_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
                 seg_summaries[future_fields[1]] / activity_sf_factors["MF"]
@@ -944,15 +955,27 @@ try:
         ''' taz summary '''
         taz_summaries = p_df.groupby(tid).sum()
         taz_summaries.drop("seg_num", axis=1, inplace=True)
-        # calc allocated jobs and housing
-        taz_summaries["RES_alloc"] = (taz_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) + (
+
+        # calc EXPI jobs and housing
+        taz_summaries["RES_EXPI"] = (taz_summaries[expi_fields[0]] / activity_sf_factors["SF"]) + (
+                taz_summaries[expi_fields[1]] / activity_sf_factors["MF"]
+        )
+        taz_summaries["JOBS_EXPI"] = (
+                (taz_summaries[expi_fields[2]] / activity_sf_factors["Ret"])
+                + (taz_summaries[expi_fields[3]] / activity_sf_factors["Ind"])
+                + (taz_summaries[expi_fields[4]] / activity_sf_factors["Off"])
+        )  # + (taz_summaries[future_fields[5]] / shares['Hot'])
+
+        # calc ALLOC jobs and housing
+        taz_summaries["RES_ALLOC"] = (taz_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) + (
                 taz_summaries[alloc_fields[1]] / activity_sf_factors["MF"]
         )
-        taz_summaries["JOBS_alloc"] = (
+        taz_summaries["JOBS_ALLOC"] = (
                 (taz_summaries[alloc_fields[2]] / activity_sf_factors["Ret"])
                 + (taz_summaries[alloc_fields[3]] / activity_sf_factors["Ind"])
                 + (taz_summaries[alloc_fields[4]] / activity_sf_factors["Off"])
         )  # + (taz_summaries[future_fields[5]] / shares['Hot'])
+
         # calculate 2040 estimate of Jobs and Housing
         taz_summaries["RES_2040"] = (taz_summaries[future_fields[0]] / activity_sf_factors["SF"]) + (
                 taz_summaries[future_fields[1]] / activity_sf_factors["MF"]
@@ -969,7 +992,8 @@ try:
         seg_summaries.to_csv(path.join(scen_ws, "seg_summary.csv"))
 
         # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
-        taz_sum_simple = taz_summaries[t_fields + ["RES_2040", "JOBS_2040"]]
+        taz_sum_simple = taz_summaries[t_fields +
+                                       ["RES_EXPI", "JOBS_EXPI", "RES_alloc", "JOBS_alloc", "RES_2040", "JOBS_2040"]]
         extendTableDf(
             in_table=taz,
             table_match_field=tid,
