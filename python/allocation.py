@@ -1,7 +1,7 @@
 import arcpy
 import pandas as pd
 import numpy as np
-from collections import Counter
+from collections import OrderedDict
 
 """
 read in parcels as parcels_df
@@ -45,9 +45,10 @@ def allocate_dict(
         print "Calculating allocation for segment --> {}".format(segment)
         print "...segment controls start: {}".format(seg_controls)
         # iterate over parcel rows
+        count = 0
         for parcel_id, row in group.iterrows():
             new_row = {suit_df_seg_field: segment}
-            parcel_count = dict(
+            parcel_count = OrderedDict(
                 {
                     "SF": row[sfr_sqft_cap],
                     "MF": row[mfr_sqft_cap],
@@ -60,27 +61,19 @@ def allocate_dict(
             for act_key in parcel_count.keys():
                 alloc_att = "{}_SF_{}".format(act_key, "alloc")
                 # get segment activity control val
-                segment_act_control = seg_controls[
-                    act_key
-                ]
+                segment_act_control = seg_controls[act_key]
                 # get parcel activity capacity val (ie fill_to_val)
-                parcel_act_cap = parcel_count[
-                    act_key
-                ]
+                parcel_act_ccap = parcel_count[act_key]
                 # calculate updated control
-                updated_act_control = (
-                    segment_act_control - parcel_act_cap
-                )
-                # if new control  is negative, reset activity control and parcel allocations
-                dist = 0
+                updated_act_control = (segment_act_control - parcel_act_ccap)
+                # if new control  is negative,
+                #   reset activity control and parcel allocations
                 if updated_act_control < 0:
                     dist = updated_act_control * -1
                     updated_act_control += dist
-                    parcel_act_cap -= dist
-                seg_controls[
-                    act_key
-                ] = updated_act_control  # update activity control to reflect allocation
-                new_row[alloc_att] = parcel_act_cap
+                    parcel_act_ccap -= dist
+                seg_controls[act_key] = updated_act_control  # update activity control to reflect allocation
+                new_row[alloc_att] = parcel_act_ccap         # add
 
             # add new row to filled dict
             filled_rows[parcel_id] = new_row
@@ -201,11 +194,11 @@ def allocate_df(
 if __name__ == "__main__":
     # suitability polygon inputs
     # processed elements
-    parcel_fc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb\parcels"
-    capacity_tbl = (
-        r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\WE_Sum\WE_Sum_scenario.gdb"
-        r"\capacity "
-    )
+    parcel_fc = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\scenarios\WE_Sum\WE_Sum_scenario.gdb\parcels"
+    # capacity_tbl = (
+    #     r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\scenarios\WE_Sum\WE_Sum_scenario.gdb"
+    #     r"\capacity "
+    # )
     id_field = "ParclID"
     seg_field = "seg_num"
     suit_field = "tot_suit"
@@ -220,7 +213,7 @@ if __name__ == "__main__":
 
     # control elements
     control_tbl = (
-        r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv"
+        r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\tables\control_totals.csv"
     )
     control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
     control_seg_attr = "segment"
@@ -229,7 +222,7 @@ if __name__ == "__main__":
     ).set_index(control_seg_attr)
     ctl_dict = ctl_df.T.to_dict()
     # make df to insert
-    p_flds = [id_field, seg_field, suit_field]
+    p_flds = [id_field, seg_field, suit_field + cap_fields]
     cap_flds = [id_field] + cap_fields
     pdf = pd.DataFrame(
         arcpy.da.TableToNumPyArray(

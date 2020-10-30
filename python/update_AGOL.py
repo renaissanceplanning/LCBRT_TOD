@@ -1,6 +1,7 @@
 import arcpy
 from os import path, remove
 from arcgis.gis import GIS
+from arcgis.mapping import WebMap
 # from pathlib import Path
 
 
@@ -15,9 +16,9 @@ def get_group_id(group_name, owner):
 
 ''' Start setting variables '''
 # Set the path to the project
-# scripts_folder = Path(__file__).resolve().parent.parent
-scripts_folder = r'K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scripts'
-project_path = path.join(scripts_folder, 'maps', 'LCBRT_maps', 'LCBRT_maps.aprx')
+scripts_folder = r'C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\scripts'
+# scripts_folder = path.dirname(path.abspath(__file__))
+project_path = r"C:\Users\V_RPG\Desktop\MDPMT_Testreplace\test_replace_project\test_replace_project.aprx"
 
 # user/password of the owner account
 portal = "http://www.arcgis.com"  # Can also reference a local portal
@@ -27,7 +28,7 @@ password = "1%8CGBrI53Gg"
 # Set sharing options
 shr_to_org = True
 shr_to_everyone = False
-shr_with_groups = get_group_id(group_name='Low Country BRT - TOD',
+shr_with_groups = get_group_id(group_name='test_crowdsource',
                                owner=user)  # GroupID unique identifier
 
 # Feature service/SD name in arcgis.com,
@@ -37,6 +38,16 @@ service_names = ["WE_Sum", "WE_Fair"]
 LOCAL_PATH = path.join(scripts_folder, 'maps')
 ''' End setting variables '''
 
+def get_wm_item_id(gis, wm_title, item_type="Web Map"):
+    try:
+        wm_search = gis.content.search(f"title: {wm_title}", item_type=item_type)
+        for wm in wm_search:
+            if wm.title == wm_title:
+                return wm.id
+    except AttributeError:
+        print("no web map by that name exists, cannot find id to publish")
+
+def update_wm_from_map(pro_project, map_name, map_service):
 
 def update_fs_from_map(pro_project, map_name, service_name):
     # Local paths to create temporary content
