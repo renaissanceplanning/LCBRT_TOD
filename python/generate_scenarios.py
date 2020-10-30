@@ -222,7 +222,7 @@ def genFieldList(suffix, measure="SF", include_untracked=True):
 
 def makeFieldRefDict(in_dict, suffix):
     """
-    Generates a dictionary of field references the map category labels to output
+    Generates a dictionary of field references that map category labels to output
     fields based on use type (checked against USES in the analysis).
     """
     global USES
@@ -770,17 +770,17 @@ try:
         ).set_index(control_seg_attr)
         ctl_df = ctl_df[ctl_df[demand_phase] == "net"].drop(demand_phase, axis=1)
 
-        ''' remove activity sqft already absorbed by pipeline development '''
-        pipeline_df = pdf[[seg_id_field] + pipe_fields_noOther]
-        pipeline_by_seg = pipeline_df.groupby(seg_id_field).sum()
-        for col in ctl_df.columns:
-            idx = ctl_df.columns.get_loc(col)
-            ctl_df[col] = np.where((ctl_df[col] != 0),
-                                   ctl_df[col] - pipeline_by_seg.iloc[:, idx],
-                                   0)
-            ctl_df[col] = np.where((ctl_df[col] < 0),
-                                   0,
-                                   ctl_df[col])
+        # ''' remove activity sqft already absorbed by pipeline development '''
+        # pipeline_df = pdf[[seg_id_field] + pipe_fields_noOther]
+        # pipeline_by_seg = pipeline_df.groupby(seg_id_field).sum()
+        # for col in ctl_df.columns:
+        #     idx = ctl_df.columns.get_loc(col)
+        #     ctl_df[col] = np.where((ctl_df[col] != 0),
+        #                            ctl_df[col] - pipeline_by_seg.iloc[:, idx],
+        #                            0)
+        #     ctl_df[col] = np.where((ctl_df[col] < 0),
+        #                            0,
+        #                            ctl_df[col])
 
         ''' run allocation '''
         ctl_dict = ctl_df.T.to_dict()
@@ -992,8 +992,8 @@ try:
         seg_summaries.to_csv(path.join(scen_ws, "seg_summary.csv"))
 
         # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
-        taz_sum_simple = taz_summaries[t_fields +
-                                       ["RES_EXPI", "JOBS_EXPI", "RES_ALLOC", "JOBS_ALLOC", "RES_2040", "JOBS_2040"]]
+        res_job_fields = ["RES_EXPI", "JOBS_EXPI", "RES_ALLOC", "JOBS_ALLOC", "RES_2040", "JOBS_2040"]
+        taz_sum_simple = taz_summaries[t_fields + res_job_fields]
         extendTableDf(
             in_table=taz,
             table_match_field=tid,
@@ -1001,13 +1001,12 @@ try:
             df_match_field=tid,
             append_only=False,
         )
-        # update RES and JOBS to reflect proportion of full TAZ
-        arcpy.CalculateField_management(in_table=taz, field='RES_2040',
-                                        expression="!RES_2040! * !Share!",
-                                        expression_type="PYTHON_9.3")
-        arcpy.CalculateField_management(in_table=taz, field='JOBS_2040',
-                                        expression="!JOBS_2040! * !Share!",
-                                        expression_type="PYTHON_9.3")
+        # update RES and JOBS to reflect proportion of full TAZ for all phases
+        for f in res_job_fields:
+            arcpy.CalculateField_management(in_table=taz, field=f,
+                                            expression="!{}! * !Share!".format(f),
+                                            expression_type="PYTHON_9.3")
+
         # calculate difference from current CoG estimates
         arcpy.AddField_management(in_table=taz, field_name="RES_diff", field_type="DOUBLE")
         arcpy.AddField_management(in_table=taz, field_name="JOBS_diff", field_type="DOUBLE")

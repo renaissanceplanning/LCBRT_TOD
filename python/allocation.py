@@ -17,12 +17,12 @@ for segment in segments:
 
 
 def allocate_dict(
-    suit_df,
-    suit_id_field,
-    suit_field,
-    suit_df_seg_field,
-    suit_cap_fields,
-    control_dict,
+        suit_df,
+        suit_id_field,
+        suit_field,
+        suit_df_seg_field,
+        suit_cap_fields,
+        control_dict,
 ):
     # sort data by segment and suitability descending
     suit_df.sort_values(
@@ -79,7 +79,7 @@ def allocate_dict(
                     updated_act_control += dist
                     parcel_act_ccap -= dist
                 seg_controls[act_key] = updated_act_control  # update activity control to reflect allocation
-                new_row[alloc_att] = parcel_act_ccap         # add
+                new_row[alloc_att] = parcel_act_ccap  # add
 
             # add new row to filled dict
             filled_rows[parcel_id] = new_row
@@ -87,20 +87,20 @@ def allocate_dict(
 
     filled_df = (
         pd.DataFrame(filled_rows)
-        .T.reset_index()
-        .rename(columns={"index": suit_id_field})
-        .drop(suit_df_seg_field, axis=1)
+            .T.reset_index()
+            .rename(columns={"index": suit_id_field})
+            .drop(suit_df_seg_field, axis=1)
     )
     return filled_df
 
 
 def allocate_df(
-    control_df,
-    control_fields,
-    suit_df,
-    suit_df_cap_fields,
-    suit_df_seg_field,
-    suit_field,
+        control_df,
+        control_fields,
+        suit_df,
+        suit_df_cap_fields,
+        suit_df_seg_field,
+        suit_field,
 ):
     """
 
@@ -200,54 +200,27 @@ def allocate_df(
 if __name__ == "__main__":
     # suitability polygon inputs
     # processed elements
-    parcel_fc = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\scenarios\WE_Sum\WE_Sum_scenario.gdb\parcels"
-    # capacity_tbl = (
-    #     r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\scenarios\WE_Sum\WE_Sum_scenario.gdb"
-    #     r"\capacity "
-    # )
+    parcel_fc = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\WE_Sum\WE_Sum_scenario.gdb\parcels"
     id_field = "ParclID"
     seg_field = "seg_num"
     suit_field = "tot_suit"
-    cap_fields = [
-        "SF_SF_ChgCap",
-        "MF_SF_ChgCap",
-        "Ret_SF_ChgCap",
-        "Ind_SF_ChgCap",
-        "Off_SF_ChgCap",
-        "Hot_SF_ChgCap",
-    ]
+    cap_fields = ["SF_SF_ChgCap", "MF_SF_ChgCap", "Ret_SF_ChgCap",
+                  "Ind_SF_ChgCap", "Off_SF_ChgCap", "Hot_SF_ChgCap", ]
 
     # control elements
-    control_tbl = (
-        r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\tables\control_totals.csv"
-    )
+    control_tbl = (r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\control_totals.csv")
     control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
     control_seg_attr = "segment"
     demand_phase = "group"
-    ctl_df = pd.read_csv(
-        control_tbl, usecols=control_fields + [control_seg_attr, demand_phase]
-    ).set_index(control_seg_attr)
+    ctl_df = pd.read_csv(control_tbl, usecols=control_fields + [control_seg_attr, demand_phase]).set_index(control_seg_attr)
     ctl_df = ctl_df[ctl_df[demand_phase] == "net"].drop(demand_phase, axis=1)
     ctl_dict = ctl_df.T.to_dict()
 
     # make df to insert
     p_flds = [id_field, seg_field, suit_field] + cap_fields
     cap_flds = [id_field] + cap_fields
-    pdf = pd.DataFrame(
-        arcpy.da.TableToNumPyArray(
-            in_table=parcel_fc, field_names=p_flds, null_value=0.0
-        )
-    ).set_index(keys=id_field)
-    # capdf = pd.DataFrame(
-    #     arcpy.da.TableToNumPyArray(
-    #         in_table=capacity_tbl, field_names=cap_flds, null_value=0.0
-    #     )
-    # ).set_index(keys=id_field)
-    # p_cap = pdf.join(other=capdf)
-
-    # allocation_df = allocate_df(control_df=ctl_df, control_fields=control_fields + [control_seg_attr],
-    #                             suit_df=p_cap, suit_df_cap_fields=cap_fields,
-    #                             suit_df_seg_field=seg_field, suit_field=suit_field)
+    pdf = pd.DataFrame(arcpy.da.TableToNumPyArray(
+            in_table=parcel_fc, field_names=p_flds, null_value=0.0)).set_index(keys=id_field)
 
     allocation_dict = allocate_dict(
         suit_df=pdf,
@@ -262,6 +235,6 @@ if __name__ == "__main__":
     out_array.dtype.names = tuple(names)
     arcpy.da.NumPyArrayToTable(
         out_array,
-        r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\temp\scenarios\allocation.csv",
+        r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\tables\allocation.csv",
     )
     print(allocation_dict.head())
