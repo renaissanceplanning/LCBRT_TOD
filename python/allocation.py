@@ -42,8 +42,8 @@ def allocate_dict(
     # loop over segments and create control dictionary
     for segment, group in suit_df.groupby(suit_df_seg_field):
         seg_controls = control_dict[segment]
-        print "Calculating allocation for segment --> {}".format(segment)
-        print "...segment controls start: {}".format(seg_controls)
+        print("Calculating allocation for segment --> {}".format(segment))
+        print ("...segment controls start: {}".format(seg_controls))
         # iterate over parcel rows
         count = 0
         for parcel_id, row in group.iterrows():
@@ -60,12 +60,18 @@ def allocate_dict(
             )
             for act_key in parcel_count.keys():
                 alloc_att = "{}_SF_{}".format(act_key, "alloc")
-                # get segment activity control val
-                segment_act_control = seg_controls[act_key]
-                # get parcel activity capacity val (ie fill_to_val)
-                parcel_act_ccap = parcel_count[act_key]
+                # get segment activity control val, if control is 0 set lu allocation to 0
+                segment_act_control = int(seg_controls[act_key])
+                if segment_act_control == 0:
+                    new_row[alloc_att] = 0
+                    continue
+                # get parcel activity capacity val (ie fill_to_val), if parcel_cap is 0 set alloc to 0
+                parcel_act_ccap = int(parcel_count[act_key])
+                if parcel_act_ccap == 0:
+                    new_row[alloc_att] = 0
+                    continue
                 # calculate updated control
-                updated_act_control = (segment_act_control - parcel_act_ccap)
+                updated_act_control = int(segment_act_control - parcel_act_ccap)
                 # if new control  is negative,
                 #   reset activity control and parcel allocations
                 if updated_act_control < 0:
@@ -77,7 +83,7 @@ def allocate_dict(
 
             # add new row to filled dict
             filled_rows[parcel_id] = new_row
-        print "...segment controls end: {}".format(seg_controls)
+        print ("...segment controls end: {}".format(seg_controls))
 
     filled_df = (
         pd.DataFrame(filled_rows)
@@ -217,31 +223,34 @@ if __name__ == "__main__":
     )
     control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
     control_seg_attr = "segment"
+    demand_phase = "group"
     ctl_df = pd.read_csv(
-        control_tbl, usecols=control_fields + [control_seg_attr]
+        control_tbl, usecols=control_fields + [control_seg_attr, demand_phase]
     ).set_index(control_seg_attr)
+    ctl_df = ctl_df[ctl_df[demand_phase] == "net"].drop(demand_phase, axis=1)
     ctl_dict = ctl_df.T.to_dict()
+
     # make df to insert
-    p_flds = [id_field, seg_field, suit_field + cap_fields]
+    p_flds = [id_field, seg_field, suit_field] + cap_fields
     cap_flds = [id_field] + cap_fields
     pdf = pd.DataFrame(
         arcpy.da.TableToNumPyArray(
             in_table=parcel_fc, field_names=p_flds, null_value=0.0
         )
     ).set_index(keys=id_field)
-    capdf = pd.DataFrame(
-        arcpy.da.TableToNumPyArray(
-            in_table=capacity_tbl, field_names=cap_flds, null_value=0.0
-        )
-    ).set_index(keys=id_field)
-    p_cap = pdf.join(other=capdf)
+    # capdf = pd.DataFrame(
+    #     arcpy.da.TableToNumPyArray(
+    #         in_table=capacity_tbl, field_names=cap_flds, null_value=0.0
+    #     )
+    # ).set_index(keys=id_field)
+    # p_cap = pdf.join(other=capdf)
 
     # allocation_df = allocate_df(control_df=ctl_df, control_fields=control_fields + [control_seg_attr],
     #                             suit_df=p_cap, suit_df_cap_fields=cap_fields,
     #                             suit_df_seg_field=seg_field, suit_field=suit_field)
 
     allocation_dict = allocate_dict(
-        suit_df=p_cap,
+        suit_df=pdf,
         suit_id_field=id_field,
         suit_field=suit_field,
         suit_df_seg_field=seg_field,
