@@ -4,6 +4,10 @@
 #TODO: report FAR, units per acre, lu mix by station area, segment (this might be just as easily done in a dashboard)
 #TODO: station area typology spreadsheet ingestion tool (might be a separate tool?)
 
+### WHICH PARCELS ARE LOCKED IN AS SF RES? 
+###   Area_AC <1 AND SBF_FLU = 'Unassigned' AND (BldSqFt =  0 OR LandUse = 'Single-family')
+###    - selected and used to overwrite values in `Exp_LU`
+
 Generate a TOD scenario based on workspace details, analysis specs, standard input 
 data, and derived inputs/specs:
 
@@ -46,7 +50,8 @@ STANDARD INPUTS:
       - `id_field`: unique id for each parcel
       - `par_bld_sqft_field`: estimated building area
       - 'par_sqft_field': estimate FAR
-      - `lu_field`: current land use
+      - `current_lu_field`: current land use
+      - `exp_lu_field`: expected land use
       - `par_est_fld_ref`: Dictionary with keys listing expected (relevant)
         categories in `lu_field` and values that relate each category to a use in 
         `USES`
@@ -55,12 +60,18 @@ STANDARD INPUTS:
       - `acres_field`: parcel area in acreage
       - `seg_id_field`: the analysis segment the parcel belongs to
       - `in_pipe_field`: is development in the pipeline for the parcel? (0/1)
-      - `excl_lu`: List of land use categores in `lu_field` that are excluded in
+      - `tod_excl_lu`: List of land use categories in `lu_field` that are excluded in
          TOD templating (i.e, are assumed to have no potential for future development)
+      - `alloc_excl_lu`: List of land use categories in `lu_field` that are exlcuded
+         in allocating future growth.
       - `basecap_sqft`: the estimated baseline capacity square footage for parcel
          development potential outside TOD areas.
       - `basecap_lu`: the expected land use for parcel develoment potential outside
          TOD areas. Values are expected to be found in `par_est_fld_ref`.
+      - `base_sf_cap`: a field that defines baseline capacity for single-family 
+         residential development in number of units.
+      - `flu_lock`: A field indicating whether the future land use for the parcel
+         is "locked in" (1) or determined dynamically (0)
     
   - `newpipe_fc`: New and pipeline development points
       - `newpipe_par_field`: parcel associated with each point
@@ -268,7 +279,8 @@ def makeTargetFieldsDict(tgt_fields):
 parcels = "parcels"
 parcels = path.join(source_gdb, parcels)
 id_field = "ParclID"
-lu_field = "LandUse"
+current_lu_field = "LandUse2" # Copy of `LandUse` but classed as "vacant/undeveloped" where bldgsqft=0 and LU would suggest a building is present
+exp_lu_field = "Exp_LU"
 par_est_fld_ref = {
     "Commercial/Retail": "Ret",
     "Industrial/Manufacturing": "Ind",
@@ -286,9 +298,12 @@ do_prop_field = "DOSProp"
 acres_field = "Area_AC"
 seg_id_field = "seg_num"
 in_pipe_field = "in_pipe"
-excl_lu = ["Recreation/Cultural", "Single-family", "Transportation", "Utilities"]
+tod_excl_lu = ["Recreation/Cultural", "Single-family", "Transportation", "Utilities"]
+alloc_excl_lu = ["Recreation/Cultural", "Transportation", "Utilities"]
 basecap_sqft = "EXP_Sqft"
 basecap_lu = "Exp_LU"
+base_sf_cap = "SF_Cpct"
+flu_lock = "FLU_LOCK"
 
 # New/pipeline features
 newpipe_fc = "pipeline_with_pid"
@@ -305,7 +320,7 @@ new_dev_fld_ref = {
     "Retail (Power Center) New": "Ret",
     "Retail New": "Ret",
     "Student New": "Oth",
-    "Single Family": "SF",
+    "Single Family New": "SF",
 }
 pipe_fld_ref = {
     "Flex Pipeline": "Ind",
@@ -317,10 +332,10 @@ pipe_fld_ref = {
     "Retail Pipeline": "Ret",
     "Specialty Pipeline": "Oth",
     "Student Pipeline": "Oth",
-    "Single Family": "SF",
+    "Single Family Pipeline": "SF",
 }
-new_dev_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + "LIKE '%New'"
-pipe_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + "LIKE '%Pipeline'"
+new_dev_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + " LIKE '%New'"
+pipe_wc = arcpy.AddFieldDelimiters(newpipe_fc, newpipe_lu) + " LIKE '%Pipeline'"
 
 # Stations
 stations = "stations_LCRT_BRT_scenarios_20200814"
@@ -335,6 +350,7 @@ restrictions = None
 # TAZ
 taz = path.join(source_gdb, "TAZ_LCRT_SBF08122020v2")
 tid = "Big_TAZ"
+taz_wc = arcpy.AddFieldDelimiters(taz, 'LCRT') + "= 1"
 
 # Control variables
 control_tbl = path.join(project_dir, "tables", "control_totals.csv")
@@ -347,6 +363,7 @@ new_dev_fields = genFieldList(suffix="New")  # New dev pts estimates of existing
 ex_lu_fields = genFieldList(suffix="Ex")  # Estimates of existing floor are (parcel-based + new-dev)
 pipe_fields = genFieldList(suffix="Pipe")  # Pipeline floor area
 expi_fields = genFieldList(suffix="ExPi")  # Existing + pipeline floor area
+plan_fields = genFieldList(suffix="Plan", include_untracked=False) # ExPi + Baseline capacity (or just ExPi for non-locked-in parcels)
 tgt_sf_fields = genFieldList(suffix="Tgt", include_untracked=False)  # Target floor area (from TOD template application)
 tgt_sf_field_dict = makeTargetFieldsDict(tgt_sf_fields)  # Dictionary for conversion of TOD template activities to floor area
 adj_fields = genFieldList(suffix="Adj", include_untracked=False)  # Adjusted floor area targets (TOD templates adjusted based on expi)
@@ -458,24 +475,27 @@ try:
             do_prop_field=do_prop_field,
             acres_field=acres_field,
             seg_id_field=seg_id_field,
-            lu_field=lu_field,
+            current_lu_field=current_lu_field,
+            exp_lu_field=exp_lu_field,
             pipe_field=in_pipe_field,
             stations=stations_fl,
             station_buffers=walk_shed,
             weights=weights,
+            flu_lock=flu_lock,
             out_gdb=scen_gdb,
-            excl_lu=excl_lu,
+            tod_excl_lu=tod_excl_lu,
+            alloc_excl_lu=alloc_excl_lu,
             stations_wc=None,
         )
 
-        # Estimate existing, pipeline development
+        # Estimate existing, pipeline
         #  -- Parcel-based estimates
         print "Appending existing activity data to parcel features based on parcel attributes"
         _par_est_fld_ref = makeFieldRefDict(par_est_fld_ref, "Par")
         sqFtByLu(
             in_fc=suit_fc,
             sqft_field=par_bld_sqft_field,
-            lu_field=lu_field,
+            lu_field=current_lu_field,
             lu_field_ref=_par_est_fld_ref,
             where_clause=None,
         )
@@ -525,7 +545,7 @@ try:
         )
 
         # -- Calculate fields
-        print "...Calculating existing (parcel-based + new development)"
+        print "...Calculating existing (parcel-based & new development)"
         for ex_lu_field, par_est_field, new_dev_field in zip(
                 ex_lu_fields, par_est_fields, new_dev_fields
         ):
@@ -558,6 +578,58 @@ try:
                     r[-1] = ex_val + pipe_val
                     c.updateRow(r)
 
+        # Address "planned" development (expected LU but not pipeline)
+        # for each expected land use, report the expecte sf based on FAR or num units
+        # "Pivot out" the baseline expected floor area for all parcels
+        print "...Pivoting baseline development capacity"
+        bcap_suffix = basecap_fields[0].split("_SF_")[-1]
+        _bcap_fld_ref = makeFieldRefDict(par_est_fld_ref, bcap_suffix)
+        bcap_wc = arcpy.AddFieldDelimiters(suit_fc, in_pipe_field) + " <> 1"
+        sqFtByLu(
+            in_fc=suit_fc,
+            sqft_field=basecap_sqft,
+            lu_field=basecap_lu,
+            lu_field_ref=_bcap_fld_ref,
+            where_clause=bcap_wc,
+        )
+        # include SF RES capacity
+        print "...Patching SF res baseline cap"
+        sf_res_cap_field = "SF_SF_{}".format(bcap_suffix)
+        sf_expr = "!{}! * {}".format(base_sf_cap, activity_sf_factors["SF"])
+        arcpy.CalculateField_management(
+            suit_fc, sf_res_cap_field, sf_expr, expression_type="PYTHON")
+        
+        # -- Dump basecaps to df
+        bcap_df_fields = [id_field] + basecap_fields
+        bcap_df = pd.DataFrame(
+            arcpy.da.TableToNumPyArray(
+                in_table=suit_fc, field_names=bcap_df_fields, null_value=0.0
+            )
+        )
+        print "...(total SF cap: {})".format(bcap_df[sf_res_cap_field].sum())
+
+        # Calculate "planned dev" (expi + bcap for "locked in" parcels)
+        print "...Calculating planned dev (ExPi + Bcap-for-locked-in-parcels)"
+        for plan_field, expi_field, bcap_field in zip(
+                plan_fields, expi_fields, basecap_fields
+        ):
+            arcpy.AddField_management(suit_fc, plan_field, "LONG")
+            with arcpy.da.UpdateCursor(
+                    suit_fc, [plan_field, expi_field, bcap_field, flu_lock]
+            ) as c:
+                for r in c:
+                    plan_val, expi_val, bcap_val, locked = r
+                    if locked == 1:
+                        if bcap_val is None:
+                            bcap_val = 0
+                        if expi_val is None:
+                            expi_val = 0
+                        plan_val = expi_val + bcap_val
+                    else:
+                        plan_val = expi_val
+                    r[0] = plan_val
+                    c.updateRow(r)
+
         # Apply TOD templates
         print "Applying TOD templates..."
         if USE_NET:
@@ -567,7 +639,7 @@ try:
                 fishnet_fc=suit_fc,
                 fishnet_id=id_field,
                 technology_name=TECH,
-                fishnet_suitability_field="tot_suit",
+                fishnet_suitability_field="tod_suit",
                 fishnet_where_clause="",
                 network_dataset=walk_net,
                 impedance_attribute=imp_field,
@@ -584,7 +656,7 @@ try:
                 fishnet_fc=suit_fc,
                 fishnet_id=id_field,
                 technology_name=TECH,
-                fishnet_suitability_field="tot_suit",
+                fishnet_suitability_field="tod_suit",
                 fishnet_where_clause="",
                 preset_stations_field=None,
                 weight_by_area=True,
@@ -592,9 +664,8 @@ try:
             )
             dev_area_tbl = path.join(scen_gdb, "dev_area_activities_suit")
 
-        # Adjust dev_area_activities_net_suit  activity values to SQFT
+        # Adjust dev_area_activities_net_suit activity values to SQFT
         print "Converting activity targets to Sq Ft targets from station type embellishments..."
-
         for tgt_sf_field in tgt_sf_fields:
             arcpy.AddField_management(dev_area_tbl, tgt_sf_field, "LONG")
             arcpy.CalculateField_management(dev_area_tbl, tgt_sf_field, 0)
@@ -611,7 +682,7 @@ try:
                 in_table=st_type_tbl, field_names=stn_type_fields
             )
         )
-        append_fields = [id_field, "stn_name"] + expi_fields
+        append_fields = [id_field, "stn_name"] + expi_fields + basecap_fields + plan_fields
         parcels_df = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
                 in_table=suit_fc, field_names=append_fields, null_value=0.0
@@ -651,6 +722,7 @@ try:
                         c.updateRow(r)
 
         # -- Tack on existing + pipeline square footage fields to the dev_area_tbl
+        # -- Tack on planned square footage fields to the dev_area_tbl
         extendTableDf(
             in_table=dev_area_tbl,
             table_match_field=id_field,
@@ -663,13 +735,15 @@ try:
         print "Adjusting build-out targets based on existing and pipeline development"
         adj_tgt_tbl = dev_area_tbl + "_adj"
         tgt_suffix = tgt_sf_fields[0].split("_SF_")[-1]
-        expi_suffix = expi_fields[0].split("_SF_")[-1]
-        expi_refs = [f.replace(tgt_suffix, expi_suffix) for f in tgt_sf_fields]
+        #expi_suffix = expi_fields[0].split("_SF_")[-1]
+        plan_suffix = plan_fields[0].split("_SF_")[-1]
+        #expi_refs = [f.replace(tgt_suffix, expi_suffix) for f in tgt_sf_fields]
+        plan_refs = [f.replace(tgt_suffix, plan_suffix) for f in tgt_sf_fields]
         adjustTargetsBasedOnExisting2(
             dev_areas_table=dev_area_tbl,
             id_field=id_field,
             station_area_field="stn_name",
-            existing_fields=expi_refs,
+            existing_fields=plan_refs,
             target_fields=tgt_sf_fields,
             out_fields=adj_fields,
             out_table=adj_tgt_tbl,
@@ -678,24 +752,24 @@ try:
 
         print "Blending TOD and baseline capacity estimates"
         # "Pivot out" the baseline expected floor area for all parcels
-        print "...Pivoting baseline development capacity"
-        bcap_suffix = basecap_fields[0].split("_SF_")[-1]
-        _bcap_fld_ref = makeFieldRefDict(par_est_fld_ref, bcap_suffix)
-        bcap_wc = arcpy.AddFieldDelimiters(suit_fc, in_pipe_field) + " <> 1"
-        sqFtByLu(
-            in_fc=suit_fc,
-            sqft_field=basecap_sqft,
-            lu_field=basecap_lu,
-            lu_field_ref=_bcap_fld_ref,
-            where_clause=bcap_wc,
-        )
-        # -- Dump basecaps to df
-        bcap_df_fields = [id_field] + basecap_fields
-        bcap_df = pd.DataFrame(
-            arcpy.da.TableToNumPyArray(
-                in_table=suit_fc, field_names=bcap_df_fields, null_value=0.0
-            )
-        )
+        # print "...Pivoting baseline development capacity"
+        # bcap_suffix = basecap_fields[0].split("_SF_")[-1]
+        # _bcap_fld_ref = makeFieldRefDict(par_est_fld_ref, bcap_suffix)
+        # bcap_wc = arcpy.AddFieldDelimiters(suit_fc, in_pipe_field) + " <> 1"
+        # sqFtByLu(
+        #     in_fc=suit_fc,
+        #     sqft_field=basecap_sqft,
+        #     lu_field=basecap_lu,
+        #     lu_field_ref=_bcap_fld_ref,
+        #     where_clause=bcap_wc,
+        # )
+        # # -- Dump basecaps to df
+        # bcap_df_fields = [id_field] + basecap_fields
+        # bcap_df = pd.DataFrame(
+        #     arcpy.da.TableToNumPyArray(
+        #         in_table=suit_fc, field_names=bcap_df_fields, null_value=0.0
+        #     )
+        # )
         # -- Dump adjusted TOD caps to df
         print "...masking baseline capacity with TOD capacity"
         adj_df_fields = [id_field] + adj_fields
@@ -705,11 +779,11 @@ try:
         # -- Merge and update TOD and base cap
         cap_df = bcap_df.merge(adj_df, how="left", on=id_field)
         for tcap, bcap, acap in zip(totcap_fields, basecap_fields, adj_fields):
-            acap_filter = cap_df[acap] is not None
+            acap_filter = np.isnan(cap_df[acap])
             cap_df[tcap] = np.select(
-                [acap_filter, ~acap_filter],
-                [cap_df[acap], cap_df[bcap]],
-                default=np.nan,
+                [acap_filter],
+                [cap_df[bcap]],
+                cap_df[acap]
             )
         # -- export full capacity estimates
         print "...exporting blended capacity to 'capacity' table"
@@ -754,7 +828,7 @@ try:
         # Run allocation
         print "Allocating square footage based on change capacity and segment level control totals"
         pipe_fields_noOther = pipe_fields[:-1]
-        p_flds = [id_field, seg_id_field, "tot_suit"] + chgcap_fields + pipe_fields_noOther
+        p_flds = [id_field, seg_id_field, "alloc_suit"] + chgcap_fields + pipe_fields_noOther
         pdf = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
                 in_table=suit_fc, field_names=p_flds, null_value=0.0
@@ -787,7 +861,7 @@ try:
         allocation_df = allocate_dict(
             suit_df=pdf,
             suit_id_field=id_field,
-            suit_field="tot_suit",
+            suit_field="alloc_suit",
             suit_df_seg_field=seg_id_field,
             suit_cap_fields=chgcap_fields,
             control_dict=ctl_dict,
@@ -919,16 +993,16 @@ try:
         ).set_index(id_field)
         t_df = pd.DataFrame(
             arcpy.da.TableToNumPyArray(
-                in_table=taz, field_names=t_fields, null_value=0.0
+                in_table=taz, field_names=t_fields, where_clause=taz_wc, null_value=0.0
             )
-        )
+        ).groupby(tid, as_index=False).sum()
 
         ''' 
         -------------------
         segment summary 
         -------------------
         '''
-        seg_summaries = p_df.drop([tid], axis=1).groupby(seg_id_field).sum()
+        seg_summaries = p_df.groupby(seg_id_field).sum()
         seg_summaries.drop(tid, axis=1, inplace=True)
         # calc PIPE jobs and housing
         seg_summaries["RES_PIPE"] = ((seg_summaries[pipe_fields[0]] / activity_sf_factors["SF"]) +
@@ -956,7 +1030,7 @@ try:
 
         # calculate 2040 estimate of Jobs and Housing
         seg_summaries["RES_2040"] = seg_summaries['RES_PIPE'] + seg_summaries['RES_ALLOC'] + seg_summaries['LCRT_H20']
-        seg_summaries["JOBS_2040"] = seg_summaries['JOBS_PIPE'] + seg_summaries['JOBS_ALLOC'] + seg_summaries['JOBS_H20']
+        seg_summaries["JOBS_2040"] = seg_summaries['JOBS_PIPE'] + seg_summaries['JOBS_ALLOC'] + seg_summaries['LCRT_E20']
         seg_summaries.reset_index(inplace=True)
 
         ''' 
@@ -964,9 +1038,10 @@ try:
         taz summary 
         ---------------
         '''
-        taz_summaries = p_df.drop(['LCRT_H20', 'LCRT_E20', 'LCRT_H40', 'LCRT_E40'], axis=1).groupby(tid).sum()
+        taz_summaries = p_df.drop(['LCRT_H20', 'LCRT_E20', 'LCRT_H40', 'LCRT_E40'], axis=1).groupby(tid,
+                                                                                                    as_index=False).sum()
         taz_summaries.drop("seg_num", axis=1, inplace=True)
-        taz_summaries = taz_summaries.merge(t_df, on=t_df[0])
+        taz_summaries = taz_summaries.merge(t_df, on=tid)
 
         # calc PIPE jobs and housing
         taz_summaries["RES_PIPE"] = ((taz_summaries[pipe_fields[0]] / activity_sf_factors["SF"]) +
@@ -994,7 +1069,7 @@ try:
 
         # calculate 2040 estimate of Jobs and Housing
         taz_summaries["RES_2040"] = taz_summaries['RES_ALLOC'] + taz_summaries['RES_PIPE'] + taz_summaries['LCRT_H20']
-        taz_summaries["JOBS_2040"] = taz_summaries['JOBS_ALLOC'] + taz_summaries['JOBS_PIPE'] + taz_summaries['JOBS_H20']
+        taz_summaries["JOBS_2040"] = taz_summaries['JOBS_ALLOC'] + taz_summaries['JOBS_PIPE'] + taz_summaries['LCRT_E20']
         taz_summaries.reset_index(inplace=True)
 
         # write out tables
@@ -1002,7 +1077,8 @@ try:
         seg_summaries.to_csv(path.join(scen_ws, "seg_summary.csv"))
 
         # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
-        res_job_fields = ["RES_EXPI", "JOBS_EXPI", "RES_ALLOC", "JOBS_ALLOC", "RES_2040", "JOBS_2040"]
+        res_job_fields = ["RES_PIPE", "JOBS_PIPE", "RES_EXPI", "JOBS_EXPI",
+                          "RES_ALLOC", "JOBS_ALLOC", "RES_2040", "JOBS_2040"]
         taz_sum_simple = taz_summaries[t_fields + res_job_fields]
         extendTableDf(
             in_table=taz,
@@ -1011,11 +1087,11 @@ try:
             df_match_field=tid,
             append_only=False,
         )
-        # update RES and JOBS to reflect proportion of full TAZ for all phases
-        for f in res_job_fields:
-            arcpy.CalculateField_management(in_table=taz, field=f,
-                                            expression="!{}! * !Share!".format(f),
-                                            expression_type="PYTHON_9.3")
+        # # update RES and JOBS to reflect proportion of full TAZ for all phases
+        # for f in res_job_fields:
+        #     arcpy.CalculateField_management(in_table=taz, field=f,
+        #                                     expression="!{}! * !Share!".format(f),
+        #                                     expression_type="PYTHON_9.3")
 
         # calculate difference from current CoG estimates
         arcpy.AddField_management(in_table=taz, field_name="RES_diff", field_type="DOUBLE")

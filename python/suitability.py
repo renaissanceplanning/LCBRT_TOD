@@ -7,14 +7,20 @@ inputs:
     do_prop_field - field identifying proportion of Dev Op site available for dev
     acres_field - field containing area in acres of each polygon
     seg_id_field - field identifying which segment a suitability polygon is in
-    lu_field - field identifying land use of a suitability polygon
+    current_lu_field - field identifying the current land use of a suitability polygon
+    exp_lu_field - field identifying the expected land use of a suitability polygon
     pipe_field - field identifying whether a suitability polygon is in the pipeline or not
     stations - point layer identifying station locations
     station_buffers - polygon layer defining station areas (walkshed or simple buffer)
     weights - dictionary of weights for each suitability constraint
     out_gdb - output geodatabase to write suitability table and suitability feature class with tot_suit appended
-    excl_lu - list of land uses to ignore in suitability analysis
+    flu_lock - A field in `in_suit_fc` that flags polygons where a future land use is locked in (TOD suit= 0)
+    tod_excl_lu - list of land uses to ignore in evaluating TOD suitability
+    alloc_excl_lu - list of lands uses to ignore in evaluating allocation suitability
     stations_wc - SQL statment to generate optional scenario suitabilities
+
+parcels with `current_lu_field` values in `alloc_excl_lu` will have no suitability for allocation purposes
+parcels with `exp_lu_field` values in `tod_excl_lu` will have no suitabiltiy for TOD templating
 """
 import arcpy
 import numpy as np
@@ -50,14 +56,17 @@ def generate_suitability(
     do_prop_field,
     acres_field,
     seg_id_field,
-    lu_field,
+    current_lu_field,
+    exp_lu_field,
     pipe_field,
     stations,
     station_buffers,
     weights,
+    flu_lock,
     out_gdb,
-    excl_lu=[],
-    stations_wc=None,
+    tod_excl_lu=[],
+    alloc_excl_lu=[],
+    stations_wc=None
 ):
     print "Building Suitability table..."
     # read in suitability shapes (tesselation or other (ie..parcels) to gdb
@@ -75,8 +84,10 @@ def generate_suitability(
         do_prop_field,
         acres_field,
         seg_id_field,
-        lu_field,
+        current_lu_field,
+        exp_lu_field,
         pipe_field,
+        flu_lock
     ]
     df = pd.DataFrame(arcpy.da.TableToNumPyArray(suit_fc, fields))
     df[id_field] = df[id_field].astype(str)
@@ -84,7 +95,7 @@ def generate_suitability(
     # Calc suit components
     df["suit_DO"] = df[is_do_field] * weights["in_DO"]
     df["suit_vac"] = np.select(
-        [df[lu_field] == "Vacant/Undeveloped"], [weights["is_vacant"]], 0.0
+        [df[current_lu_field] == "Vacant/Undeveloped"], [weights["is_vacant"]], 0.0
     )
     # -- dev area
     df["base_area"] = df[acres_field] * np.select(
@@ -142,28 +153,49 @@ def generate_suitability(
     suit_fields = ["suit_DO", "suit_vac", "suit_dev", "walk_suit", "in_station"]
     df["raw_suit"] = df[suit_fields].sum(axis=1)
 
-    # zero out SF res/rec/cultural/transp/utilities (unless DO)
-    if excl_lu:
-        exclusions = pd.concat([df[lu_field] == lu for lu in excl_lu], axis=1)
-        exclusions["any_excl"] = np.any(exclusions, axis=1)
-        df["lu_include"] = np.select([exclusions.any_excl], [0.0], 1.0)
+    # zero out select uses for TOD templating purposes (unless DO)
+    if tod_excl_lu:
+        exclusions = pd.concat([df[exp_lu_field] == lu for lu in tod_excl_lu], axis=1)
+        exclusions["tod_any_excl"] = np.any(exclusions, axis=1)
+        df["tod_lu_include"] = np.select([exclusions.tod_any_excl], [0.0], 1.0)
     else:
-        df["lu_include"] = 1.0
+        df["tod_lu_include"] = 1.0
+
+    # zero out select uses for allocation purposes (unless DO)
+    if alloc_excl_lu:
+        exclusions = pd.concat([df[current_lu_field] == lu for lu in alloc_excl_lu], axis=1)
+        exclusions["alloc_any_excl"] = np.any(exclusions, axis=1)
+        df["alloc_lu_include"] = np.select([exclusions.alloc_any_excl], [0.0], 1.0)
+    else:
+        df["alloc_lu_include"] = 1.0
 
     # zero out sites already in development pipeline
     df["pipe_include"] = np.select([df[pipe_field] == 1], [0.0], 1.0)
 
     # Calc total suit removing parcels deemed ineligible by LU and Pipeline dev
     # The parcel has no pipeline dev AND (is either a DO site OR a LU that could develop)
-    _include_ = np.logical_and(
+    _include_t = np.logical_and(
         df["pipe_include"] == 1,
         np.logical_or(
             df[is_do_field] == 1,
-            df["lu_include"] == 1
+            df["tod_lu_include"] == 1
         )
-    )   
-    df["full_include"] = np.select([_include_], [1.0], 0.0)
-    df["tot_suit"] = df.raw_suit * df.full_include
+    )
+    _include_t = np.logical_and(
+        _include_t,
+        df[flu_lock] != 1
+    )
+    _include_a = np.logical_and(
+        df["pipe_include"] == 1,
+        np.logical_or(
+            df[is_do_field] == 1,
+            df["alloc_lu_include"] == 1
+        )
+    )
+    df["tod_include"] = np.select([_include_t], [1.0], 0.0)
+    df["alloc_include"] = np.select([_include_a], [1.0], 0.0)
+    df["tod_suit"] = df.raw_suit * df.tod_include
+    df["alloc_suit"] = df.raw_suit * df.alloc_include
     # df["tot_suit"] = (
     #     #df[[is_do_field, "lu_include", "pipe_include"]].max(axis=1) * df.raw_suit
         
@@ -179,7 +211,7 @@ def generate_suitability(
     print "...Suitability table generated here: {}".format(suit_tbl)
 
     # join suit score to suit fc
-    suit_df = df[[id_field, "tot_suit"]]
+    suit_df = df[[id_field, "tod_suit", "alloc_suit"]]
     suit_arr = np.array(
         np.rec.fromrecords(suit_df.values, names=suit_df.dtypes.index.tolist())
     )
@@ -190,7 +222,7 @@ def generate_suitability(
         array_match_field=id_field,
         append_only=False,
     )
-    print "...'tot_suit' added to ##-{}-## layer for use in TOD tools".format(suit_fc)
+    print "...'tod_suit', 'alloc_suit' added to ##-{}-## layer for use in TOD tools".format(suit_fc)
     return suit_fc, suit_tbl
 
 
