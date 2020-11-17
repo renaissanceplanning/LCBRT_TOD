@@ -175,7 +175,7 @@ import numpy as np
 project_dir = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3"
 source_gdb = path.join(project_dir, "LCBRT_data.gdb")
 scenarios_ws = path.join(project_dir, "scenarios")
-scenarios = ["WE_Sum"]  #, "WE_Fair"
+scenarios = ["WE_Sum", "WE_Fair"]  #
 arcpy.env.overwriteOutput = True
 
 # %% GLOBAL SETTINGS/SPECS
@@ -202,10 +202,10 @@ weights = {
 activity_sf_factors = {
     "SF": 1800,
     "MF": 1200,
-    "Ret": 500,
-    "Ind": 800,
-    "Off": 400,
-    "Hot": 500,
+    "Ret": 720,
+    "Ind": 2342,
+    "Off": 206,
+    "Hot": 700,
 }
 
 
@@ -353,7 +353,7 @@ tid = "Big_TAZ"
 taz_wc = arcpy.AddFieldDelimiters(taz, 'LCRT') + "= 1"
 
 # Control variables
-control_tbl = path.join(project_dir, "tables", "control_totals.csv")
+control_tbl = path.join(project_dir, "tables", "control_totals_111620.csv")
 control_fields = ["Ind", "Ret", "MF", "SF", "Off", "Hot"]
 control_seg_attr = "segment"
 
@@ -1079,7 +1079,7 @@ try:
         # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
         res_job_fields = ["RES_PIPE", "JOBS_PIPE", "RES_EXPI", "JOBS_EXPI",
                           "RES_ALLOC", "JOBS_ALLOC", "RES_2040", "JOBS_2040"]
-        taz_sum_simple = taz_summaries[t_fields + res_job_fields]
+        taz_sum_simple = taz_summaries[[tid] + res_job_fields]
         extendTableDf(
             in_table=taz,
             table_match_field=tid,

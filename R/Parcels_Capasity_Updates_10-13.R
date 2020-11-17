@@ -1,10 +1,10 @@
-### Set Up ####
+# Set Up -----------------------------------------------------------------------
 library(sf)
 library(tmap)
 tmap_mode("view")
 library(tidyverse)
 setwd("K:/Projects/BCDCOG/Features/Files_For_RDB/RDB_V3/source_shapefiles")
-#### function for mode ####
+# function ---------------------------------------------------------------------
 Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
@@ -55,9 +55,9 @@ Add_Far_Use_All = function(Calc_PAR, All_PAR){
                 Count_Par     = n()
       )
 }
-#### Calculations ####
+# Calculations -----------------------------------------------------------------
 ## Read in and Subset Data
-Parcels     = read_sf("Parcels.shp")
+Parcels <- read_sf("Parcels.shp")
 FAR_Parcels = subset(Parcels, Parcels$Exp_LU != "Single-family")
 SF          = subset(Parcels, Parcels$Exp_LU == "Single-family")
 
@@ -101,7 +101,7 @@ FAR_Parcels =
 rm(FARS_Add)
 Parcels = rbind(FAR_Parcels, SF)
 
-#### Writing Out ####
+# Writing Out ------------------------------------------------------------------
 Parcels$EXP_Sqft = Parcels$Sq_Feet * Parcels$Mean_FAR
 write_sf(Parcels, "Parcels.shp")
                   

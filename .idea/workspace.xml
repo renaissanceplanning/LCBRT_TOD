@@ -16,15 +16,21 @@
         <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
       </path>
     </expand>
-    <select />
+    <select>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="BRANCH:master" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </select>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/scripts.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/scripts.iml" afterDir="false" />
+    <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="remove pipeline netting out of allocation workflow">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/allocation.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/allocation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/R/Parcel Capasity.R" beforeDir="false" afterPath="$PROJECT_DIR$/R/Parcel Capasity.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/R/Parcels_Capasity_Updates_10-13.R" beforeDir="false" afterPath="$PROJECT_DIR$/R/Parcels_Capasity_Updates_10-13.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python/generate_scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/generate_scenarios.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python/update_AGOL.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/update_AGOL.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,7 +65,7 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="JSON" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$USER_HOME$/Desktop/Copy_Content" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.path.for.package.tslint" value="project" />
@@ -208,8 +214,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.generate_scenarios (1)" />
-        <item itemvalue="Python.allocation" />
         <item itemvalue="Python.update_AGOL" />
+        <item itemvalue="Python.allocation" />
         <item itemvalue="Python.distribution2_AB" />
         <item itemvalue="Python.summarize_data" />
       </list>
@@ -326,7 +332,14 @@
       <option name="project" value="LOCAL" />
       <updated>1604067056554</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="remove pipeline netting out of allocation workflow">
+      <created>1604082794037</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1604082794037</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -337,7 +350,19 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
@@ -363,36 +388,42 @@
     <MESSAGE value="removed 'Share' attribute from grouping summaries (segment and TAZ)" />
     <MESSAGE value="add allocation summary for TAZ data" />
     <MESSAGE value="minor updates" />
-    <option name="LAST_COMMIT_MESSAGE" value="minor updates" />
+    <MESSAGE value="remove pipeline netting out of allocation workflow" />
+    <option name="LAST_COMMIT_MESSAGE" value="remove pipeline netting out of allocation workflow" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="698" y="309" key="#Notifications" timestamp="1599094503119">
-      <screen x="0" y="0" width="1920" height="971" />
+    <state x="737" y="319" key="#Notifications" timestamp="1605558534356">
+      <screen x="62" y="0" width="1858" height="1001" />
     </state>
     <state x="698" y="309" key="#Notifications/0.0.1920.971@0.0.1920.971" timestamp="1599094503119" />
+    <state x="737" y="319" key="#Notifications/62.0.1858.1001@62.0.1858.1001" timestamp="1605558534356" />
     <state x="733" y="126" key="#Plugins" timestamp="1603828414313">
       <screen x="0" y="0" width="1920" height="971" />
     </state>
     <state x="733" y="126" key="#Plugins/0.0.1920.971@0.0.1920.971" timestamp="1603828414313" />
+    <state x="655" y="282" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1604521309132">
+      <screen x="0" y="0" width="1920" height="961" />
+    </state>
+    <state x="655" y="282" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.961@0.0.1920.961" timestamp="1604521309132" />
     <state x="-1192" y="327" key="#com.intellij.tools.ToolEditorDialog" timestamp="1599151721583">
       <screen x="-1920" y="0" width="1920" height="1040" />
     </state>
     <state x="-1192" y="327" key="#com.intellij.tools.ToolEditorDialog/1920.0.1920.1040/-1920.0.1920.1040/0.0.1920.1040@-1920.0.1920.1040" timestamp="1599151721583" />
-    <state x="587" y="62" width="1190" height="822" key="CommitChangelistDialog2" timestamp="1603897348947">
+    <state x="587" y="0" width="1190" height="884" key="CommitChangelistDialog2" timestamp="1604940586073">
       <screen x="0" y="0" width="1920" height="971" />
     </state>
-    <state x="568" y="61" key="CommitChangelistDialog2/0.0.1920.961@0.0.1920.961" timestamp="1602692861077" />
+    <state x="-7" y="61" width="1633" height="864" key="CommitChangelistDialog2/0.0.1920.961@0.0.1920.961" timestamp="1604521253739" />
     <state x="568" y="61" key="CommitChangelistDialog2/0.0.1920.963@0.0.1920.963" timestamp="1600225907476" />
-    <state x="587" y="62" width="1190" height="822" key="CommitChangelistDialog2/0.0.1920.971@0.0.1920.971" timestamp="1603897348947" />
+    <state x="587" y="0" width="1190" height="884" key="CommitChangelistDialog2/0.0.1920.971@0.0.1920.971" timestamp="1604940586073" />
     <state width="801" height="466" key="DebuggerActiveHint" timestamp="1602001180894">
       <screen x="0" y="0" width="1920" height="961" />
     </state>
     <state width="801" height="466" key="DebuggerActiveHint/0.0.1920.961@0.0.1920.961" timestamp="1602001180894" />
-    <state x="739" y="244" key="FileChooserDialogImpl" timestamp="1603140903874">
+    <state x="739" y="244" key="FileChooserDialogImpl" timestamp="1604601461913">
       <screen x="0" y="0" width="1920" height="971" />
     </state>
     <state x="739" y="241" key="FileChooserDialogImpl/0.0.1920.961@0.0.1920.961" timestamp="1600953475210" />
-    <state x="739" y="244" key="FileChooserDialogImpl/0.0.1920.971@0.0.1920.971" timestamp="1603140903874" />
+    <state x="739" y="244" key="FileChooserDialogImpl/0.0.1920.971@0.0.1920.971" timestamp="1604601461913" />
     <state x="739" y="249" key="FileChooserDialogImpl/0.0.1920.991@0.0.1920.991" timestamp="1601062046631" />
     <state x="739" y="264" key="FileChooserDialogImpl/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1602081971076" />
     <state x="-1181" y="261" key="FileChooserDialogImpl/1920.0.1920.1040/-1920.0.1920.1040/0.0.1920.1040@-1920.0.1920.1040" timestamp="1599152593020" />
@@ -424,15 +455,15 @@
       <screen x="0" y="0" width="1920" height="961" />
     </state>
     <state width="1899" height="316" key="GridCell.Tab.-1.right/0.0.1920.961@0.0.1920.961" timestamp="1598635407669" />
-    <state width="1921" height="984" key="GridCell.Tab.0.bottom" timestamp="1604081421619">
-      <screen x="0" y="0" width="1920" height="1040" />
+    <state width="1837" height="494" key="GridCell.Tab.0.bottom" timestamp="1605578105759">
+      <screen x="62" y="0" width="1858" height="1001" />
     </state>
     <state width="1899" height="142" key="GridCell.Tab.0.bottom/0.0.1920.1050@0.0.1920.1050" timestamp="1599443707846" />
     <state width="1899" height="271" key="GridCell.Tab.0.bottom/0.0.1920.940@0.0.1920.940" timestamp="1603124722079" />
     <state width="1899" height="175" key="GridCell.Tab.0.bottom/0.0.1920.950@0.0.1920.950" timestamp="1603127121626" />
-    <state width="1899" height="289" key="GridCell.Tab.0.bottom/0.0.1920.961@0.0.1920.961" timestamp="1604078090280" />
+    <state width="1899" height="471" key="GridCell.Tab.0.bottom/0.0.1920.961@0.0.1920.961" timestamp="1604952404382" />
     <state width="1899" height="128" key="GridCell.Tab.0.bottom/0.0.1920.963@0.0.1920.963" timestamp="1600225914507" />
-    <state width="1899" height="291" key="GridCell.Tab.0.bottom/0.0.1920.971@0.0.1920.971" timestamp="1603140263546" />
+    <state width="1899" height="290" key="GridCell.Tab.0.bottom/0.0.1920.971@0.0.1920.971" timestamp="1604953709321" />
     <state width="1899" height="350" key="GridCell.Tab.0.bottom/0.0.1920.973@0.0.1920.973" timestamp="1599101016748" />
     <state width="1882" height="307" key="GridCell.Tab.0.bottom/0.0.1920.991@0.0.1920.991" timestamp="1601062099029" />
     <state width="1537" height="778" key="GridCell.Tab.0.bottom/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1604070150995" />
@@ -440,15 +471,16 @@
     <state width="1921" height="984" key="GridCell.Tab.0.bottom/1920.0.1920.1040/-1920.0.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1604081421619" />
     <state width="1899" height="213" key="GridCell.Tab.0.bottom/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@-1920.0.1920.1050" timestamp="1599148948484" />
     <state width="1882" height="430" key="GridCell.Tab.0.bottom/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1599583759092" />
-    <state width="1921" height="984" key="GridCell.Tab.0.center" timestamp="1604081421619">
-      <screen x="0" y="0" width="1920" height="1040" />
+    <state width="1837" height="494" key="GridCell.Tab.0.bottom/62.0.1858.1001@62.0.1858.1001" timestamp="1605578105759" />
+    <state width="1837" height="494" key="GridCell.Tab.0.center" timestamp="1605578105759">
+      <screen x="62" y="0" width="1858" height="1001" />
     </state>
     <state width="1899" height="142" key="GridCell.Tab.0.center/0.0.1920.1050@0.0.1920.1050" timestamp="1599443707846" />
     <state width="1899" height="271" key="GridCell.Tab.0.center/0.0.1920.940@0.0.1920.940" timestamp="1603124722079" />
     <state width="1899" height="175" key="GridCell.Tab.0.center/0.0.1920.950@0.0.1920.950" timestamp="1603127121626" />
-    <state width="1899" height="289" key="GridCell.Tab.0.center/0.0.1920.961@0.0.1920.961" timestamp="1604078090280" />
+    <state width="1899" height="471" key="GridCell.Tab.0.center/0.0.1920.961@0.0.1920.961" timestamp="1604952404382" />
     <state width="1899" height="128" key="GridCell.Tab.0.center/0.0.1920.963@0.0.1920.963" timestamp="1600225914507" />
-    <state width="1899" height="291" key="GridCell.Tab.0.center/0.0.1920.971@0.0.1920.971" timestamp="1603140263546" />
+    <state width="1899" height="290" key="GridCell.Tab.0.center/0.0.1920.971@0.0.1920.971" timestamp="1604953709321" />
     <state width="1899" height="350" key="GridCell.Tab.0.center/0.0.1920.973@0.0.1920.973" timestamp="1599101016748" />
     <state width="1882" height="307" key="GridCell.Tab.0.center/0.0.1920.991@0.0.1920.991" timestamp="1601062099029" />
     <state width="1537" height="778" key="GridCell.Tab.0.center/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1604070150995" />
@@ -456,15 +488,16 @@
     <state width="1921" height="984" key="GridCell.Tab.0.center/1920.0.1920.1040/-1920.0.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1604081421619" />
     <state width="1899" height="213" key="GridCell.Tab.0.center/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@-1920.0.1920.1050" timestamp="1599148948484" />
     <state width="1882" height="430" key="GridCell.Tab.0.center/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1599583759092" />
-    <state width="1921" height="984" key="GridCell.Tab.0.left" timestamp="1604081421619">
-      <screen x="0" y="0" width="1920" height="1040" />
+    <state width="1837" height="494" key="GridCell.Tab.0.center/62.0.1858.1001@62.0.1858.1001" timestamp="1605578105759" />
+    <state width="1837" height="494" key="GridCell.Tab.0.left" timestamp="1605578105759">
+      <screen x="62" y="0" width="1858" height="1001" />
     </state>
     <state width="1899" height="142" key="GridCell.Tab.0.left/0.0.1920.1050@0.0.1920.1050" timestamp="1599443707846" />
     <state width="1899" height="271" key="GridCell.Tab.0.left/0.0.1920.940@0.0.1920.940" timestamp="1603124722079" />
     <state width="1899" height="175" key="GridCell.Tab.0.left/0.0.1920.950@0.0.1920.950" timestamp="1603127121626" />
-    <state width="1899" height="289" key="GridCell.Tab.0.left/0.0.1920.961@0.0.1920.961" timestamp="1604078090280" />
+    <state width="1899" height="471" key="GridCell.Tab.0.left/0.0.1920.961@0.0.1920.961" timestamp="1604952404382" />
     <state width="1899" height="128" key="GridCell.Tab.0.left/0.0.1920.963@0.0.1920.963" timestamp="1600225914507" />
-    <state width="1899" height="291" key="GridCell.Tab.0.left/0.0.1920.971@0.0.1920.971" timestamp="1603140263546" />
+    <state width="1899" height="290" key="GridCell.Tab.0.left/0.0.1920.971@0.0.1920.971" timestamp="1604953709321" />
     <state width="1899" height="350" key="GridCell.Tab.0.left/0.0.1920.973@0.0.1920.973" timestamp="1599101016748" />
     <state width="1882" height="307" key="GridCell.Tab.0.left/0.0.1920.991@0.0.1920.991" timestamp="1601062099029" />
     <state width="1537" height="778" key="GridCell.Tab.0.left/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1604070150995" />
@@ -472,15 +505,16 @@
     <state width="1921" height="984" key="GridCell.Tab.0.left/1920.0.1920.1040/-1920.0.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1604081421619" />
     <state width="1899" height="213" key="GridCell.Tab.0.left/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@-1920.0.1920.1050" timestamp="1599148948484" />
     <state width="1882" height="430" key="GridCell.Tab.0.left/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1599583759092" />
-    <state width="1921" height="984" key="GridCell.Tab.0.right" timestamp="1604081421619">
-      <screen x="0" y="0" width="1920" height="1040" />
+    <state width="1837" height="494" key="GridCell.Tab.0.left/62.0.1858.1001@62.0.1858.1001" timestamp="1605578105759" />
+    <state width="1837" height="494" key="GridCell.Tab.0.right" timestamp="1605578105759">
+      <screen x="62" y="0" width="1858" height="1001" />
     </state>
     <state width="1899" height="142" key="GridCell.Tab.0.right/0.0.1920.1050@0.0.1920.1050" timestamp="1599443707846" />
     <state width="1899" height="271" key="GridCell.Tab.0.right/0.0.1920.940@0.0.1920.940" timestamp="1603124722079" />
     <state width="1899" height="175" key="GridCell.Tab.0.right/0.0.1920.950@0.0.1920.950" timestamp="1603127121626" />
-    <state width="1899" height="289" key="GridCell.Tab.0.right/0.0.1920.961@0.0.1920.961" timestamp="1604078090280" />
+    <state width="1899" height="471" key="GridCell.Tab.0.right/0.0.1920.961@0.0.1920.961" timestamp="1604952404382" />
     <state width="1899" height="128" key="GridCell.Tab.0.right/0.0.1920.963@0.0.1920.963" timestamp="1600225914507" />
-    <state width="1899" height="291" key="GridCell.Tab.0.right/0.0.1920.971@0.0.1920.971" timestamp="1603140263546" />
+    <state width="1899" height="290" key="GridCell.Tab.0.right/0.0.1920.971@0.0.1920.971" timestamp="1604953709321" />
     <state width="1899" height="350" key="GridCell.Tab.0.right/0.0.1920.973@0.0.1920.973" timestamp="1599101016748" />
     <state width="1882" height="307" key="GridCell.Tab.0.right/0.0.1920.991@0.0.1920.991" timestamp="1601062099029" />
     <state width="1537" height="778" key="GridCell.Tab.0.right/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1604070150995" />
@@ -488,6 +522,7 @@
     <state width="1921" height="984" key="GridCell.Tab.0.right/1920.0.1920.1040/-1920.0.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1604081421619" />
     <state width="1899" height="213" key="GridCell.Tab.0.right/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@-1920.0.1920.1050" timestamp="1599148948484" />
     <state width="1882" height="430" key="GridCell.Tab.0.right/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1599583759092" />
+    <state width="1837" height="494" key="GridCell.Tab.0.right/62.0.1858.1001@62.0.1858.1001" timestamp="1605578105759" />
     <state width="1899" height="316" key="GridCell.Tab.1.bottom" timestamp="1598651165547">
       <screen x="0" y="0" width="1920" height="961" />
     </state>
@@ -523,10 +558,10 @@
       <screen x="0" y="0" width="1920" height="961" />
     </state>
     <state x="747" y="196" width="782" height="569" key="VCS.ChangeListViewerDialog/0.0.1920.961@0.0.1920.961" timestamp="1601999288025" />
-    <state x="552" y="236" key="Vcs.Push.Dialog.v2" timestamp="1604067060291">
-      <screen x="0" y="0" width="1920" height="1050" />
+    <state x="552" y="215" key="Vcs.Push.Dialog.v2" timestamp="1604082796974">
+      <screen x="0" y="0" width="1920" height="961" />
     </state>
-    <state x="552" y="215" key="Vcs.Push.Dialog.v2/0.0.1920.961@0.0.1920.961" timestamp="1602692866843" />
+    <state x="552" y="215" key="Vcs.Push.Dialog.v2/0.0.1920.961@0.0.1920.961" timestamp="1604082796974" />
     <state x="552" y="215" key="Vcs.Push.Dialog.v2/0.0.1920.963@0.0.1920.963" timestamp="1600225261974" />
     <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.971@0.0.1920.971" timestamp="1603897359197" />
     <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.973@0.0.1920.973" timestamp="1599102031261" />
@@ -562,16 +597,6 @@
           <url>file://$PROJECT_DIR$/python/allocation.py</url>
           <line>232</line>
           <option name="timeStamp" value="11" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/python/generate_scenarios.py</url>
-          <line>796</line>
-          <option name="timeStamp" value="12" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/python/generate_scenarios.py</url>
-          <line>770</line>
-          <option name="timeStamp" value="13" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

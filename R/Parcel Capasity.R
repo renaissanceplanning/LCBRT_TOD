@@ -190,12 +190,17 @@ Parcels <- read_sf("Parcels.shp")
 Parcels$Sq_Feet <- as.numeric(st_area(Parcels))
 Buildings <- read_sf("buildings_with_floors.shp")
 
-Buildings_Corridor <- st_join(st_centroid(Buildings), Parcels[-which(names(Parcels) == "BldSqFt")], join = st_within, left = FALSE)
+Buildings_Corridor <- st_join(st_centroid(Buildings), 
+                              Parcels[-which(names(Parcels) == "BldSqFt")], 
+                              join = st_within, left = FALSE)
 
-Buildings_Corridor$fl_est[Buildings_Corridor$Landuse == "Commercial/Retail" & Buildings_Corridor$fl_est > 2] <- 2
-Buildings_Corridor$fl_est[Buildings_Corridor$Landuse == "Industrial/Manufacturing" & Buildings_Corridor$fl_est > 2] <- 2
+Buildings_Corridor$fl_est[Buildings_Corridor$Landuse == "Commercial/Retail" & 
+                            Buildings_Corridor$fl_est > 2] <- 2
+Buildings_Corridor$fl_est[Buildings_Corridor$Landuse == "Industrial/Manufacturing" & 
+                            Buildings_Corridor$fl_est > 2] <- 2
 
-Buildings_Corridor$fl_ar_sq <- Buildings_Corridor$fl_est * Buildings_Corridor$Shape_Area
+Buildings_Corridor$fl_ar_sq <- (Buildings_Corridor$fl_est * 
+                                  Buildings_Corridor$Shape_Area)
 
 Buildings_Corridor <- st_drop_geometry(Buildings_Corridor)
 
@@ -204,7 +209,8 @@ Buildings_Areas <-
     group_by(ParclID) %>%
     summarise(BldSqFt = sum(fl_ar_sq))
 
-Parcels <- left_join(Parcels[-which(names(Parcels) == "BldSqFt")], Buildings_Areas)
+Parcels <- left_join(Parcels[-which(names(Parcels) == "BldSqFt")], 
+                     Buildings_Areas)
 
 Parcels$BldA_AC <- Parcels$BldSqFt / 43560
 

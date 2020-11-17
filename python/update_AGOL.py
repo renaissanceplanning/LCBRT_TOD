@@ -17,9 +17,9 @@ def get_group_id(group_name, owner):
 
 ''' Start setting variables '''
 # Set the path to the project
-scripts_folder = r'C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\scripts'
+scripts_folder = r'K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scripts'
 # scripts_folder = path.dirname(path.abspath(__file__))
-project_path = r"C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\scripts\maps\LCBRT_maps\LCBRT_maps.aprx"
+project_path = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scripts\maps\LCBRT_maps\LCBRT_maps.aprx"
 
 # user/password of the owner account
 portal = "http://www.arcgis.com"  # Can also reference a local portal
@@ -33,7 +33,7 @@ shr_with_groups = get_group_id(group_name='Low County BRT - TOD',
                                owner=user)  # GroupID unique identifier
 
 # Feature service/SD name in arcgis.com,
-service_names = ["WE_Sum", "WE_Fair"]
+service_names = ["WE_Sum"]  #, "WE_Fair"
 
 # local path
 LOCAL_PATH = path.join(scripts_folder, 'maps')
