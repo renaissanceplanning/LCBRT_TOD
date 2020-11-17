@@ -175,7 +175,7 @@ import numpy as np
 project_dir = r"K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3"
 source_gdb = path.join(project_dir, "LCBRT_data.gdb")
 scenarios_ws = path.join(project_dir, "scenarios")
-scenarios = ["WE_Sum", "WE_Fair"]  #
+scenarios = ["WE_Sum"]  # , "WE_Fair"
 arcpy.env.overwriteOutput = True
 
 # %% GLOBAL SETTINGS/SPECS
@@ -279,7 +279,7 @@ def makeTargetFieldsDict(tgt_fields):
 parcels = "parcels"
 parcels = path.join(source_gdb, parcels)
 id_field = "ParclID"
-current_lu_field = "LandUse2" # Copy of `LandUse` but classed as "vacant/undeveloped" where bldgsqft=0 and LU would suggest a building is present
+current_lu_field = "LandUse2"  # Copy of `LandUse` but classed as "vacant/undeveloped" where bldgsqft=0 and LU would suggest a building is present
 exp_lu_field = "Exp_LU"
 par_est_fld_ref = {
     "Commercial/Retail": "Ret",
@@ -363,23 +363,31 @@ new_dev_fields = genFieldList(suffix="New")  # New dev pts estimates of existing
 ex_lu_fields = genFieldList(suffix="Ex")  # Estimates of existing floor are (parcel-based + new-dev)
 pipe_fields = genFieldList(suffix="Pipe")  # Pipeline floor area
 expi_fields = genFieldList(suffix="ExPi")  # Existing + pipeline floor area
-plan_fields = genFieldList(suffix="Plan", include_untracked=False) # ExPi + Baseline capacity (or just ExPi for non-locked-in parcels)
+plan_fields = genFieldList(suffix="Plan",
+                           include_untracked=False)  # ExPi + Baseline capacity (or just ExPi for non-locked-in parcels)
 tgt_sf_fields = genFieldList(suffix="Tgt", include_untracked=False)  # Target floor area (from TOD template application)
-tgt_sf_field_dict = makeTargetFieldsDict(tgt_sf_fields)  # Dictionary for conversion of TOD template activities to floor area
-adj_fields = genFieldList(suffix="Adj", include_untracked=False)  # Adjusted floor area targets (TOD templates adjusted based on expi)
-basecap_fields = genFieldList(suffix="BCap", include_untracked=False)  # Build-out capacity for non-TOD parcels (from expected LU and FAR)
+tgt_sf_field_dict = makeTargetFieldsDict(
+    tgt_sf_fields)  # Dictionary for conversion of TOD template activities to floor area
+adj_fields = genFieldList(suffix="Adj",
+                          include_untracked=False)  # Adjusted floor area targets (TOD templates adjusted based on expi)
+basecap_fields = genFieldList(suffix="BCap",
+                              include_untracked=False)  # Build-out capacity for non-TOD parcels (from expected LU and FAR)
 totcap_fields = genFieldList(suffix="TotCap", include_untracked=False)  # Total capacity, blended from TOD and non-TOD
-chgcap_fields = genFieldList(suffix="ChgCap", include_untracked=False)  # Capacity for change (total capacity minus existing)
+chgcap_fields = genFieldList(suffix="ChgCap",
+                             include_untracked=False)  # Capacity for change (total capacity minus existing)
 
 # allocation fields
-alloc_fields = genFieldList(suffix="Alloc", include_untracked=False)  # allocated sqft in at buildout based on suitability, capacity for change and control sqft anticipated
+alloc_fields = genFieldList(suffix="Alloc",
+                            include_untracked=False)  # allocated sqft in at buildout based on suitability, capacity for change and control sqft anticipated
 # future (2040) fields
-future_fields = genFieldList(suffix="Fut", include_untracked=False)     # 2040 sqft combines existing/pipeline and allocated sqft
+future_fields = genFieldList(suffix="Fut",
+                             include_untracked=False)  # 2040 sqft combines existing/pipeline and allocated sqft
 
 # FAR conversions for AGOL
 far_expi_fields = genFieldList(suffix="ExPi", measure="FAR", include_untracked=False)  # FAR for existing and pipeline
 far_alloc_fields = genFieldList(suffix="Alloc", measure="FAR", include_untracked=False)  # FAR allocated
-far_future_fields = genFieldList(suffix="Fut", measure="FAR", include_untracked=False)  # FAR available overall after allocation TOD/non-TOD)
+far_future_fields = genFieldList(suffix="Fut", measure="FAR",
+                                 include_untracked=False)  # FAR available overall after allocation TOD/non-TOD)
 
 # %% PROCESS
 try:
@@ -735,9 +743,9 @@ try:
         print "Adjusting build-out targets based on existing and pipeline development"
         adj_tgt_tbl = dev_area_tbl + "_adj"
         tgt_suffix = tgt_sf_fields[0].split("_SF_")[-1]
-        #expi_suffix = expi_fields[0].split("_SF_")[-1]
+        # expi_suffix = expi_fields[0].split("_SF_")[-1]
         plan_suffix = plan_fields[0].split("_SF_")[-1]
-        #expi_refs = [f.replace(tgt_suffix, expi_suffix) for f in tgt_sf_fields]
+        # expi_refs = [f.replace(tgt_suffix, expi_suffix) for f in tgt_sf_fields]
         plan_refs = [f.replace(tgt_suffix, plan_suffix) for f in tgt_sf_fields]
         adjustTargetsBasedOnExisting2(
             dev_areas_table=dev_area_tbl,
@@ -980,7 +988,7 @@ try:
         # create Corridor Segment and TAZ summaries with conversion to RES and JOBS
         print "Generating Segment and TAZ summary tables..."
         taz = arcpy.FeatureClassToFeatureClass_conversion(in_features=taz, out_path=scen_gdb, out_name='taz')
-        p_fields = [id_field, "seg_num"] + pipe_fields + expi_fields + alloc_fields
+        p_fields = [id_field, "seg_num"] + ex_lu_fields + pipe_fields + expi_fields + alloc_fields
         t_fields = [tid, 'LCRT_H20', 'LCRT_E20', 'LCRT_H40', 'LCRT_E40']
         pwTAZ = arcpy.SpatialJoin_analysis(
             target_features=suit_fc, join_features=taz,
@@ -1004,33 +1012,45 @@ try:
         '''
         seg_summaries = p_df.groupby(seg_id_field).sum()
         seg_summaries.drop(tid, axis=1, inplace=True)
+        # calc Existing jobs and housing
+        # calc EXPI jobs and housing
+        seg_summaries["RES_EX"] = ((seg_summaries[ex_lu_fields[0]] / activity_sf_factors["SF"]) +
+                                   (seg_summaries[ex_lu_fields[1]] / activity_sf_factors["MF"]))
+        seg_summaries["JOBS_EX"] = ((seg_summaries[ex_lu_fields[2]] / activity_sf_factors["Ret"]) +
+                                    (seg_summaries[ex_lu_fields[3]] / activity_sf_factors["Ind"]) +
+                                    (seg_summaries[ex_lu_fields[4]] / activity_sf_factors["Off"]) +
+                                    (seg_summaries[ex_lu_fields[5]] / activity_sf_factors["Hot"]))
         # calc PIPE jobs and housing
         seg_summaries["RES_PIPE"] = ((seg_summaries[pipe_fields[0]] / activity_sf_factors["SF"]) +
                                      (seg_summaries[pipe_fields[1]] / activity_sf_factors["MF"]))
         seg_summaries["JOBS_PIPE"] = ((seg_summaries[pipe_fields[2]] / activity_sf_factors["Ret"]) +
                                       (seg_summaries[pipe_fields[3]] / activity_sf_factors["Ind"]) +
-                                      (seg_summaries[pipe_fields[4]] / activity_sf_factors["Off"]))
-                                    # + (seg_summaries[pipe_fields[5]] / activity_sf_factors["Hot"])
+                                      (seg_summaries[pipe_fields[4]] / activity_sf_factors["Off"]) +
+                                      (seg_summaries[pipe_fields[5]] / activity_sf_factors["Hot"]))
 
         # calc EXPI jobs and housing
         seg_summaries["RES_EXPI"] = ((seg_summaries[expi_fields[0]] / activity_sf_factors["SF"]) +
                                      (seg_summaries[expi_fields[1]] / activity_sf_factors["MF"]))
         seg_summaries["JOBS_EXPI"] = ((seg_summaries[expi_fields[2]] / activity_sf_factors["Ret"]) +
                                       (seg_summaries[expi_fields[3]] / activity_sf_factors["Ind"]) +
-                                      (seg_summaries[expi_fields[4]] / activity_sf_factors["Off"]))
-                                    # + (seg_summaries[alloc_fields[5]] / activity_sf_factors["Hot"])
+                                      (seg_summaries[expi_fields[4]] / activity_sf_factors["Off"]) +
+                                      (seg_summaries[expi_fields[5]] / activity_sf_factors["Hot"]))
 
         # calc ALLOC jobs and housing
         seg_summaries["RES_ALLOC"] = ((seg_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) +
                                       (seg_summaries[alloc_fields[1]] / activity_sf_factors["MF"]))
         seg_summaries["JOBS_ALLOC"] = ((seg_summaries[alloc_fields[2]] / activity_sf_factors["Ret"]) +
                                        (seg_summaries[alloc_fields[3]] / activity_sf_factors["Ind"]) +
-                                       (seg_summaries[alloc_fields[4]] / activity_sf_factors["Off"]))
-                                    # + (seg_summaries[alloc_fields[5]] / activity_sf_factors["Hot"])
+                                       (seg_summaries[alloc_fields[4]] / activity_sf_factors["Off"]) +
+                                       (seg_summaries[alloc_fields[5]] / activity_sf_factors["Hot"]))
 
         # calculate 2040 estimate of Jobs and Housing
-        seg_summaries["RES_2040"] = seg_summaries['RES_PIPE'] + seg_summaries['RES_ALLOC'] + seg_summaries['LCRT_H20']
-        seg_summaries["JOBS_2040"] = seg_summaries['JOBS_PIPE'] + seg_summaries['JOBS_ALLOC'] + seg_summaries['LCRT_E20']
+        seg_summaries["RES_2040"] = (seg_summaries['RES_PIPE'] +
+                                     seg_summaries['RES_ALLOC'] +
+                                     seg_summaries['LCRT_H20'])
+        seg_summaries["JOBS_2040"] = (seg_summaries['JOBS_PIPE'] +
+                                      seg_summaries['JOBS_ALLOC'] +
+                                      seg_summaries['LCRT_E20'])
         seg_summaries.reset_index(inplace=True)
 
         ''' 
@@ -1038,38 +1058,53 @@ try:
         taz summary 
         ---------------
         '''
-        taz_summaries = p_df.drop(['LCRT_H20', 'LCRT_E20', 'LCRT_H40', 'LCRT_E40'], axis=1).groupby(tid,
-                                                                                                    as_index=False).sum()
-        taz_summaries.drop("seg_num", axis=1, inplace=True)
+        taz_summaries = p_df.drop(
+            labels=['LCRT_H20', 'LCRT_E20', 'LCRT_H40', 'LCRT_E40'],
+            axis=1).groupby(tid, as_index=False).sum()
+        taz_summaries.drop(
+            labels="seg_num",
+            axis=1,
+            inplace=True)
         taz_summaries = taz_summaries.merge(t_df, on=tid)
 
+        # calc EXISTING jobs and housing
+        taz_summaries["RES_EX"] = ((taz_summaries[ex_lu_fields[0]] / activity_sf_factors["SF"]) +
+                                   (taz_summaries[ex_lu_fields[1]] / activity_sf_factors["MF"]))
+        taz_summaries["JOBS_EX"] = ((taz_summaries[ex_lu_fields[2]] / activity_sf_factors["Ret"]) +
+                                    (taz_summaries[ex_lu_fields[3]] / activity_sf_factors["Ind"]) +
+                                    (taz_summaries[ex_lu_fields[4]] / activity_sf_factors["Off"]) +
+                                    (taz_summaries[ex_lu_fields[5]] / activity_sf_factors['Hot']))
         # calc PIPE jobs and housing
         taz_summaries["RES_PIPE"] = ((taz_summaries[pipe_fields[0]] / activity_sf_factors["SF"]) +
-                                    (taz_summaries[pipe_fields[1]] / activity_sf_factors["MF"]))
+                                     (taz_summaries[pipe_fields[1]] / activity_sf_factors["MF"]))
         taz_summaries["JOBS_PIPE"] = ((taz_summaries[pipe_fields[2]] / activity_sf_factors["Ret"]) +
                                       (taz_summaries[pipe_fields[3]] / activity_sf_factors["Ind"]) +
-                                      (taz_summaries[pipe_fields[4]] / activity_sf_factors["Off"]))
-                                    # + (taz_summaries[pipe_fields[5]] / shares['Hot'])
+                                      (taz_summaries[pipe_fields[4]] / activity_sf_factors["Off"]) +
+                                      (taz_summaries[pipe_fields[5]] / activity_sf_factors['Hot']))
 
         # calc EXPI jobs and housing
         taz_summaries["RES_EXPI"] = ((taz_summaries[expi_fields[0]] / activity_sf_factors["SF"]) +
-                                    (taz_summaries[expi_fields[1]] / activity_sf_factors["MF"]))
+                                     (taz_summaries[expi_fields[1]] / activity_sf_factors["MF"]))
         taz_summaries["JOBS_EXPI"] = ((taz_summaries[expi_fields[2]] / activity_sf_factors["Ret"]) +
                                       (taz_summaries[expi_fields[3]] / activity_sf_factors["Ind"]) +
-                                      (taz_summaries[expi_fields[4]] / activity_sf_factors["Off"]))
-                                    # + (taz_summaries[expi_fields[5]] / shares['Hot'])
+                                      (taz_summaries[expi_fields[4]] / activity_sf_factors["Off"]) +
+                                      (taz_summaries[expi_fields[5]] / activity_sf_factors['Hot']))
 
         # calc ALLOC jobs and housing
         taz_summaries["RES_ALLOC"] = ((taz_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) +
-                                     (taz_summaries[alloc_fields[1]] / activity_sf_factors["MF"]))
+                                      (taz_summaries[alloc_fields[1]] / activity_sf_factors["MF"]))
         taz_summaries["JOBS_ALLOC"] = ((taz_summaries[alloc_fields[2]] / activity_sf_factors["Ret"]) +
                                        (taz_summaries[alloc_fields[3]] / activity_sf_factors["Ind"]) +
-                                       (taz_summaries[alloc_fields[4]] / activity_sf_factors["Off"]))
-                                    # + (taz_summaries[alloc_fields[5]] / shares['Hot'])
+                                       (taz_summaries[alloc_fields[4]] / activity_sf_factors["Off"]) +
+                                       (taz_summaries[alloc_fields[5]] / activity_sf_factors['Hot']))
 
         # calculate 2040 estimate of Jobs and Housing
-        taz_summaries["RES_2040"] = taz_summaries['RES_ALLOC'] + taz_summaries['RES_PIPE'] + taz_summaries['LCRT_H20']
-        taz_summaries["JOBS_2040"] = taz_summaries['JOBS_ALLOC'] + taz_summaries['JOBS_PIPE'] + taz_summaries['LCRT_E20']
+        taz_summaries["RES_2040"] = (taz_summaries['RES_ALLOC'] +
+                                     taz_summaries['RES_PIPE'] +
+                                     taz_summaries['LCRT_H20'])
+        taz_summaries["JOBS_2040"] = (taz_summaries['JOBS_ALLOC'] +
+                                      taz_summaries['JOBS_PIPE'] +
+                                      taz_summaries['LCRT_E20'])
         taz_summaries.reset_index(inplace=True)
 
         # write out tables
@@ -1077,7 +1112,7 @@ try:
         seg_summaries.to_csv(path.join(scen_ws, "seg_summary.csv"))
 
         # create DIFF between OUR RES/JOBS for TAZ to COG RES/JOBS for TAZ
-        res_job_fields = ["RES_PIPE", "JOBS_PIPE", "RES_EXPI", "JOBS_EXPI",
+        res_job_fields = ["RES_EX", "RES_PIPE", "JOBS_EX", "JOBS_PIPE", "RES_EXPI", "JOBS_EXPI",
                           "RES_ALLOC", "JOBS_ALLOC", "RES_2040", "JOBS_2040"]
         taz_sum_simple = taz_summaries[[tid] + res_job_fields]
         extendTableDf(
@@ -1096,12 +1131,24 @@ try:
         # calculate difference from current CoG estimates
         arcpy.AddField_management(in_table=taz, field_name="RES_diff", field_type="DOUBLE")
         arcpy.AddField_management(in_table=taz, field_name="JOBS_diff", field_type="DOUBLE")
+        arcpy.AddField_management(in_table=taz, field_name="JOBS_ALL_INST", field_type="DOUBLE")
+        arcpy.AddField_management(in_table=taz, field_name="JOBS_2040_INST", field_type="DOUBLE")
+        # combine ALLOCATED JOBS with projected INSTITUTIONAL JOBS
+        arcpy.CalculateField_management(in_table=taz, field="JOBS_ALL_INST",
+                                        expression="!JOBS_ALLOC! + !INST_JOBS!",
+                                        expression_type="PYTHON_9.3")
+        # recalculate 2040 JOBS estimate with INSTITUTIONAL JOBS
+        arcpy.CalculateField_management(in_table=taz, field="JOBS_2040_INST",
+                                        expression="!JOBS_ALL_INST! + !JOBS_PIPE! + !LCRT_E20!",
+                                        expression_type="PYTHON_9.3")
+        # Generate variance for TOD vs CoG jobs and res
+        arcpy.CalculateField_management(in_table=taz, field="JOBS_diff",
+                                        expression="!JOBS_2040_INST! - !LCRT_E40!",
+                                        expression_type="PYTHON_9.3")
         arcpy.CalculateField_management(in_table=taz, field="RES_diff",
                                         expression="!RES_2040! - !LCRT_H40!",
                                         expression_type="PYTHON_9.3")
-        arcpy.CalculateField_management(in_table=taz, field="JOBS_diff",
-                                        expression="!JOBS_2040! - !LCRT_E40!",
-                                        expression_type="PYTHON_9.3")
+
         print "DONE!\n"
 
 
