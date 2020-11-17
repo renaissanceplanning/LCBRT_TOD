@@ -598,7 +598,7 @@ try:
         sf_expr = "!{}! * {}".format(base_sf_cap, activity_sf_factors["SF"])
         arcpy.CalculateField_management(
             suit_fc, sf_res_cap_field, sf_expr, expression_type="PYTHON")
-        
+
         # -- Dump basecaps to df
         bcap_df_fields = [id_field] + basecap_fields
         bcap_df = pd.DataFrame(
