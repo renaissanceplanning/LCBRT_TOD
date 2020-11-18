@@ -27,10 +27,12 @@ user = "crudder_renplan"
 password = "1%8CGBrI53Gg"
 
 # Set sharing options
+groups = ['External Data Sharing - SB Friedman', 'Low County BRT - TOD']
 shr_to_org = True
-shr_to_everyone = False
-shr_with_groups = get_group_id(group_name='Low County BRT - TOD',
-                               owner=user)  # GroupID unique identifier
+shr_to_everyone = True
+shr_with_groups = [get_group_id(group_name=group, owner=user)
+                   for group in groups]
+                    # GroupID unique identifier
 
 # Feature service/SD name in arcgis.com,
 service_names = ["WE_Sum"]  #, "WE_Fair"
