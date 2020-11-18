@@ -208,6 +208,10 @@ activity_sf_factors = {
     "Hot": 700,
 }
 
+unit_to_hh_factors = {
+    "SF": 0.95,
+    "MF": 0.93
+}
 
 # %% HELPER FUNCTIONS AND CLASSES
 class LicenseError(Exception):
@@ -1012,39 +1016,47 @@ try:
         '''
         seg_summaries = p_df.groupby(seg_id_field).sum()
         seg_summaries.drop(tid, axis=1, inplace=True)
-        # calc Existing jobs and housing
-        # calc EXPI jobs and housing
-        seg_summaries["RES_EX"] = ((seg_summaries[ex_lu_fields[0]] / activity_sf_factors["SF"]) +
-                                   (seg_summaries[ex_lu_fields[1]] / activity_sf_factors["MF"]))
+        # calc Existing jobs and households
+        # calc EXPI jobs and households
+        seg_summaries["RES_EX"] = (
+                ((seg_summaries[ex_lu_fields[0]] / activity_sf_factors["SF"]) * unit_to_hh_factors["SF"]) +
+                ((seg_summaries[ex_lu_fields[1]] / activity_sf_factors["MF"]) * unit_to_hh_factors["MF"])
+        )
         seg_summaries["JOBS_EX"] = ((seg_summaries[ex_lu_fields[2]] / activity_sf_factors["Ret"]) +
                                     (seg_summaries[ex_lu_fields[3]] / activity_sf_factors["Ind"]) +
                                     (seg_summaries[ex_lu_fields[4]] / activity_sf_factors["Off"]) +
                                     (seg_summaries[ex_lu_fields[5]] / activity_sf_factors["Hot"]))
-        # calc PIPE jobs and housing
-        seg_summaries["RES_PIPE"] = ((seg_summaries[pipe_fields[0]] / activity_sf_factors["SF"]) +
-                                     (seg_summaries[pipe_fields[1]] / activity_sf_factors["MF"]))
+        # calc PIPE jobs and households
+        seg_summaries["RES_PIPE"] = (
+                ((seg_summaries[pipe_fields[0]] / activity_sf_factors["SF"]) * unit_to_hh_factors["SF"]) +
+                ((seg_summaries[pipe_fields[1]] / activity_sf_factors["MF"]) * unit_to_hh_factors["MF"])
+        )
         seg_summaries["JOBS_PIPE"] = ((seg_summaries[pipe_fields[2]] / activity_sf_factors["Ret"]) +
                                       (seg_summaries[pipe_fields[3]] / activity_sf_factors["Ind"]) +
                                       (seg_summaries[pipe_fields[4]] / activity_sf_factors["Off"]) +
                                       (seg_summaries[pipe_fields[5]] / activity_sf_factors["Hot"]))
 
         # calc EXPI jobs and housing
-        seg_summaries["RES_EXPI"] = ((seg_summaries[expi_fields[0]] / activity_sf_factors["SF"]) +
-                                     (seg_summaries[expi_fields[1]] / activity_sf_factors["MF"]))
+        seg_summaries["RES_EXPI"] = (
+                ((seg_summaries[expi_fields[0]] / activity_sf_factors["SF"]) * unit_to_hh_factors["SF"]) +
+                ((seg_summaries[expi_fields[1]] / activity_sf_factors["MF"]) * unit_to_hh_factors["MF"])
+        )
         seg_summaries["JOBS_EXPI"] = ((seg_summaries[expi_fields[2]] / activity_sf_factors["Ret"]) +
                                       (seg_summaries[expi_fields[3]] / activity_sf_factors["Ind"]) +
                                       (seg_summaries[expi_fields[4]] / activity_sf_factors["Off"]) +
                                       (seg_summaries[expi_fields[5]] / activity_sf_factors["Hot"]))
 
-        # calc ALLOC jobs and housing
-        seg_summaries["RES_ALLOC"] = ((seg_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) +
-                                      (seg_summaries[alloc_fields[1]] / activity_sf_factors["MF"]))
+        # calc ALLOC jobs and households
+        seg_summaries["RES_ALLOC"] = (
+                ((seg_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) * unit_to_hh_factors["SF"]) +
+                ((seg_summaries[alloc_fields[1]] / activity_sf_factors["MF"]) * unit_to_hh_factors["MF"])
+        )
         seg_summaries["JOBS_ALLOC"] = ((seg_summaries[alloc_fields[2]] / activity_sf_factors["Ret"]) +
                                        (seg_summaries[alloc_fields[3]] / activity_sf_factors["Ind"]) +
                                        (seg_summaries[alloc_fields[4]] / activity_sf_factors["Off"]) +
                                        (seg_summaries[alloc_fields[5]] / activity_sf_factors["Hot"]))
 
-        # calculate 2040 estimate of Jobs and Housing
+        # calculate 2040 estimate of Jobs and households
         seg_summaries["RES_2040"] = (seg_summaries['RES_PIPE'] +
                                      seg_summaries['RES_ALLOC'] +
                                      seg_summaries['LCRT_H20'])
@@ -1067,44 +1079,64 @@ try:
             inplace=True)
         taz_summaries = taz_summaries.merge(t_df, on=tid)
 
-        # calc EXISTING jobs and housing
-        taz_summaries["RES_EX"] = ((taz_summaries[ex_lu_fields[0]] / activity_sf_factors["SF"]) +
-                                   (taz_summaries[ex_lu_fields[1]] / activity_sf_factors["MF"]))
-        taz_summaries["JOBS_EX"] = ((taz_summaries[ex_lu_fields[2]] / activity_sf_factors["Ret"]) +
-                                    (taz_summaries[ex_lu_fields[3]] / activity_sf_factors["Ind"]) +
-                                    (taz_summaries[ex_lu_fields[4]] / activity_sf_factors["Off"]) +
-                                    (taz_summaries[ex_lu_fields[5]] / activity_sf_factors['Hot']))
-        # calc PIPE jobs and housing
-        taz_summaries["RES_PIPE"] = ((taz_summaries[pipe_fields[0]] / activity_sf_factors["SF"]) +
-                                     (taz_summaries[pipe_fields[1]] / activity_sf_factors["MF"]))
-        taz_summaries["JOBS_PIPE"] = ((taz_summaries[pipe_fields[2]] / activity_sf_factors["Ret"]) +
-                                      (taz_summaries[pipe_fields[3]] / activity_sf_factors["Ind"]) +
-                                      (taz_summaries[pipe_fields[4]] / activity_sf_factors["Off"]) +
-                                      (taz_summaries[pipe_fields[5]] / activity_sf_factors['Hot']))
+        # calc EXISTING jobs and households
+        taz_summaries["RES_EX"] = (
+                ((taz_summaries[ex_lu_fields[0]] / activity_sf_factors["SF"]) * unit_to_hh_factors["SF"]) +
+                ((taz_summaries[ex_lu_fields[1]] / activity_sf_factors["MF"]) * unit_to_hh_factors["MF"])
+        )
+        taz_summaries["JOBS_EX"] = (
+                (taz_summaries[ex_lu_fields[2]] / activity_sf_factors["Ret"]) +
+                (taz_summaries[ex_lu_fields[3]] / activity_sf_factors["Ind"]) +
+                (taz_summaries[ex_lu_fields[4]] / activity_sf_factors["Off"]) +
+                (taz_summaries[ex_lu_fields[5]] / activity_sf_factors['Hot'])
+        )
+        # calc PIPE jobs and households
+        taz_summaries["RES_PIPE"] = (
+                ((taz_summaries[pipe_fields[0]] / activity_sf_factors["SF"]) * unit_to_hh_factors["SF"])+
+                ((taz_summaries[pipe_fields[1]] / activity_sf_factors["MF"]) * unit_to_hh_factors["MF"])
+        )
+        taz_summaries["JOBS_PIPE"] = (
+                (taz_summaries[pipe_fields[2]] / activity_sf_factors["Ret"]) +
+                (taz_summaries[pipe_fields[3]] / activity_sf_factors["Ind"]) +
+                (taz_summaries[pipe_fields[4]] / activity_sf_factors["Off"]) +
+                (taz_summaries[pipe_fields[5]] / activity_sf_factors['Hot'])
+        )
 
-        # calc EXPI jobs and housing
-        taz_summaries["RES_EXPI"] = ((taz_summaries[expi_fields[0]] / activity_sf_factors["SF"]) +
-                                     (taz_summaries[expi_fields[1]] / activity_sf_factors["MF"]))
-        taz_summaries["JOBS_EXPI"] = ((taz_summaries[expi_fields[2]] / activity_sf_factors["Ret"]) +
-                                      (taz_summaries[expi_fields[3]] / activity_sf_factors["Ind"]) +
-                                      (taz_summaries[expi_fields[4]] / activity_sf_factors["Off"]) +
-                                      (taz_summaries[expi_fields[5]] / activity_sf_factors['Hot']))
+        # calc EXPI jobs and households
+        taz_summaries["RES_EXPI"] = (
+                ((taz_summaries[expi_fields[0]] / activity_sf_factors["SF"]) * unit_to_hh_factors["SF"]) +
+                ((taz_summaries[expi_fields[1]] / activity_sf_factors["MF"]) * unit_to_hh_factors["MF"])
+        )
+        taz_summaries["JOBS_EXPI"] = (
+                (taz_summaries[expi_fields[2]] / activity_sf_factors["Ret"]) +
+                (taz_summaries[expi_fields[3]] / activity_sf_factors["Ind"]) +
+                (taz_summaries[expi_fields[4]] / activity_sf_factors["Off"]) +
+                (taz_summaries[expi_fields[5]] / activity_sf_factors['Hot'])
+        )
 
-        # calc ALLOC jobs and housing
-        taz_summaries["RES_ALLOC"] = ((taz_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) +
-                                      (taz_summaries[alloc_fields[1]] / activity_sf_factors["MF"]))
-        taz_summaries["JOBS_ALLOC"] = ((taz_summaries[alloc_fields[2]] / activity_sf_factors["Ret"]) +
-                                       (taz_summaries[alloc_fields[3]] / activity_sf_factors["Ind"]) +
-                                       (taz_summaries[alloc_fields[4]] / activity_sf_factors["Off"]) +
-                                       (taz_summaries[alloc_fields[5]] / activity_sf_factors['Hot']))
+        # calc ALLOC jobs and households
+        taz_summaries["RES_ALLOC"] = (
+                ((taz_summaries[alloc_fields[0]] / activity_sf_factors["SF"]) * unit_to_hh_factors["SF"]) +
+                ((taz_summaries[alloc_fields[1]] / activity_sf_factors["MF"]) * unit_to_hh_factors["MF"])
+        )
+        taz_summaries["JOBS_ALLOC"] = (
+                (taz_summaries[alloc_fields[2]] / activity_sf_factors["Ret"]) +
+                (taz_summaries[alloc_fields[3]] / activity_sf_factors["Ind"]) +
+                (taz_summaries[alloc_fields[4]] / activity_sf_factors["Off"]) +
+                (taz_summaries[alloc_fields[5]] / activity_sf_factors['Hot'])
+        )
 
-        # calculate 2040 estimate of Jobs and Housing
-        taz_summaries["RES_2040"] = (taz_summaries['RES_ALLOC'] +
-                                     taz_summaries['RES_PIPE'] +
-                                     taz_summaries['LCRT_H20'])
-        taz_summaries["JOBS_2040"] = (taz_summaries['JOBS_ALLOC'] +
-                                      taz_summaries['JOBS_PIPE'] +
-                                      taz_summaries['LCRT_E20'])
+        # calculate 2040 estimate of Jobs and households
+        taz_summaries["RES_2040"] = (
+                taz_summaries['RES_ALLOC'] +
+                taz_summaries['RES_PIPE'] +
+                taz_summaries['LCRT_H20']
+        )
+        taz_summaries["JOBS_2040"] = (
+                taz_summaries['JOBS_ALLOC'] +
+                taz_summaries['JOBS_PIPE'] +
+                taz_summaries['LCRT_E20']
+        )
         taz_summaries.reset_index(inplace=True)
 
         # write out tables
