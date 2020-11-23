@@ -19,9 +19,9 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="">
+    <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="update gitignore">
+      <change afterPath="$PROJECT_DIR$/python/summarize_stationAreas.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/update_AGOL.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/update_AGOL.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,7 +69,7 @@
       <recent name="D:\Users\DE7\Documents\GitHub\LCBRT_TOD" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.update_AGOL">
+  <component name="RunManager" selected="Python.summarize_stationAreas">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="scripts" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -158,7 +158,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="summarize_data" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="summarize_stationAreas" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="scripts" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -171,9 +171,9 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/python/summarize_data.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/python/summarize_stationAreas.py" />
       <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
       <option name="REDIRECT_INPUT" value="false" />
@@ -204,11 +204,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.summarize_stationAreas" />
         <item itemvalue="Python.update_AGOL" />
         <item itemvalue="Python.generate_scenarios (1)" />
         <item itemvalue="Python.allocation" />
         <item itemvalue="Python.distribution2_AB" />
-        <item itemvalue="Python.summarize_data" />
       </list>
     </recent_temporary>
   </component>
@@ -224,6 +224,10 @@
       <option name="presentableId" value="Default" />
       <updated>1598454971206</updated>
       <workItem from="1604067093021" duration="5263000" />
+      <workItem from="1605727935193" duration="592000" />
+      <workItem from="1605731450808" duration="5000" />
+      <workItem from="1605884883165" duration="683000" />
+      <workItem from="1606158789535" duration="4477000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1599071890935</created>
@@ -344,7 +348,21 @@
       <option name="project" value="LOCAL" />
       <updated>1605655087386</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="update update_AGOL.py to share updated feature service to everyone and with needed groups">
+      <created>1605725724891</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1605725724891</updated>
+    </task>
+    <task id="LOCAL-00019" summary="update gitignore">
+      <created>1606159369463</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1606159369463</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -396,7 +414,9 @@
     <MESSAGE value="remove pipeline netting out of allocation workflow" />
     <MESSAGE value="minor updates to activity weighting" />
     <MESSAGE value="incorporate institutional jobs into allocation and 2040 estimate" />
-    <option name="LAST_COMMIT_MESSAGE" value="incorporate institutional jobs into allocation and 2040 estimate" />
+    <MESSAGE value="update update_AGOL.py to share updated feature service to everyone and with needed groups" />
+    <MESSAGE value="update gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="update gitignore" />
   </component>
   <component name="WindowStateProjectService">
     <state x="737" y="319" key="#Notifications" timestamp="1605558534356">
@@ -427,6 +447,10 @@
       <screen x="0" y="0" width="1920" height="961" />
     </state>
     <state width="801" height="466" key="DebuggerActiveHint/0.0.1920.961@0.0.1920.961" timestamp="1602001180894" />
+    <state x="92" y="92" width="1736" height="866" maximized="true" key="DiffContextDialog" timestamp="1606159273976">
+      <screen x="0" y="0" width="1920" height="1050" />
+    </state>
+    <state x="92" y="92" width="1736" height="866" maximized="true" key="DiffContextDialog/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1606159273976" />
     <state x="739" y="244" key="FileChooserDialogImpl" timestamp="1604601461913">
       <screen x="0" y="0" width="1920" height="971" />
     </state>
@@ -567,14 +591,14 @@
       <screen x="0" y="0" width="1920" height="961" />
     </state>
     <state x="747" y="196" width="782" height="569" key="VCS.ChangeListViewerDialog/0.0.1920.961@0.0.1920.961" timestamp="1601999288025" />
-    <state x="596" y="224" key="Vcs.Push.Dialog.v2" timestamp="1605657784888">
-      <screen x="62" y="0" width="1858" height="1001" />
+    <state x="552" y="236" key="Vcs.Push.Dialog.v2" timestamp="1606159371263">
+      <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="552" y="215" key="Vcs.Push.Dialog.v2/0.0.1920.961@0.0.1920.961" timestamp="1604082796974" />
     <state x="552" y="215" key="Vcs.Push.Dialog.v2/0.0.1920.963@0.0.1920.963" timestamp="1600225261974" />
     <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.971@0.0.1920.971" timestamp="1603897359197" />
     <state x="552" y="218" key="Vcs.Push.Dialog.v2/0.0.1920.973@0.0.1920.973" timestamp="1599102031261" />
-    <state x="552" y="236" key="Vcs.Push.Dialog.v2/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1604067060291" />
+    <state x="552" y="236" key="Vcs.Push.Dialog.v2/1920.0.1536.840/-1920.0.1920.1050/0.0.1920.1050@0.0.1920.1050" timestamp="1606159371263" />
     <state x="-1368" y="235" key="Vcs.Push.Dialog.v2/1920.0.1920.1050/-1920.0.1920.1050/0.0.1920.1050@-1920.0.1920.1050" timestamp="1599147623448" />
     <state x="596" y="224" key="Vcs.Push.Dialog.v2/62.0.1858.1001@62.0.1858.1001" timestamp="1605657784888" />
     <state width="968" height="535" key="XDebugger.FullValuePopup" timestamp="1604071617995">
