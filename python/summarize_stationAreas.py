@@ -54,9 +54,9 @@ alloc_fields = genFieldList(suffix="Alloc", include_untracked=False)
 future_fields = genFieldList(suffix="Fut", include_untracked=False)
 
 # %% read in data
-scen_path = r'C:\Users\V_RPG\OneDrive - Renaissance Planning Group\SHARE\LCBRT_DATA\scenarios\WE_Sum'
+scen_path = r'K:\Projects\BCDCOG\Features\Files_For_RDB\RDB_V3\scenarios\WE_Sum'
 gdb = 'WE_Sum_scenario.gdb'
-parcels = os.path.join(scen_path, gdb, 'parcels')
+parcels = os.path.join(scen_path, gdb, 'parcels_bldSqft_update_1202')
 
 p_fields = [id_field, station_name] + ex_lu_fields + pipe_fields + alloc_fields + future_fields
 

@@ -1,0 +1,1073 @@
+---
+title: "Building Height Update Checks"
+author: "Brian Froeb"
+date: "Last Updated on: `r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(sf)
+library(tmap)
+tmap_mode("view")
+library(tidyverse)
+library(kableExtra)
+library(rpgcolorsr)
+setwd("K:/Projects/BCDCOG/Features/Files_For_RDB/RDB_V3/source_shapefiles")
+
+final_parcels <- read_sf("parcels_1202.shp")
+taz <- read_sf("CHATS_TAZs_FullRegion_InstitutionalJobs11162020.shp") %>%
+  st_transform(crs = st_crs(final_parcels))
+segments <- read_sf("corridor_marketsegments.shp")
+```
+
+```{r}
+office_jobs_per <- 3
+retail_jobs_per <- 2
+man_jobs_per <- 2
+ins_jobs_per <- 2
+
+sf_du_per <- 2000
+mf_du_per <- 1000
+
+landuses <- c(unique(final_parcels$Landuse))
+
+my_pal <- rpg_color_pal("main and additional")(12)
+```
+
+# Current Estimates
+
+## Landuse, Sq Feet, and Employment
+
+```{r, out.width="100%"}
+checks <- final_parcels %>% 
+  st_drop_geometry() %>% 
+  mutate(FAR = BldSqFt / Sq_Feet) %>% 
+  filter(Landuse == "Commercial/Retail" |
+           Landuse == "Office" |
+           Landuse == "Industrial/Manufacturing" |
+           Landuse == "Institutional") %>% 
+  group_by(seg_nam, Landuse) %>% 
+  summarize(Total_Sq_Feet = sum(BldSqFt, na.rm = TRUE),
+            Mean_FAR      = mean(FAR, na.rm = TRUE),
+            Thousands     = Total_Sq_Feet / 1000,
+            Employees     = 0) 
+
+checks$Employees[checks$Landuse == "Commercial/Retail"] <- checks$Thousands[checks$Landuse == "Commercial/Retail"] * retail_jobs_per
+checks$Employees[checks$Landuse == "Office"] <- checks$Thousands[checks$Landuse == "Office"] * office_jobs_per
+checks$Employees[checks$Landuse == "Industrial/Manufacturing"] <- checks$Thousands[checks$Landuse == "Industrial/Manufacturing"] * man_jobs_per
+checks$Employees[checks$Landuse == "Institutional"] <- checks$Thousands[checks$Landuse == "Institutional"] * ins_jobs_per
+
+checks %>%
+  kable() %>%
+  kable_material(c("striped", "hover")) %>%
+  scroll_box(height = "300px")
+  
+```
+
+## Landuse, Sq Feet, and Dwelling Units
+
+```{r, out.width="100%"}
+checks_DU <- final_parcels %>% 
+  st_drop_geometry() %>% 
+  mutate(FAR = BldSqFt / Sq_Feet) %>% 
+  filter(Landuse == "Single-family" |
+           Landuse == "Multifamily" ) %>% 
+  group_by(seg_nam, Landuse) %>% 
+  summarize(Total_Sq_Feet  = sum(BldSqFt, na.rm = TRUE),
+            Land_Area      = sum(Sq_Feet, na.rm = TRUE),
+            Dwelling_Units = 0) 
+
+checks_DU$Dwelling_Units[checks_DU$Landuse == "Single-family"] <- checks_DU$Total_Sq_Feet[checks_DU$Landuse == "Single-family"] / sf_du_per
+checks_DU$Dwelling_Units[checks_DU$Landuse == "Multifamily"]   <- checks_DU$Total_Sq_Feet[checks_DU$Landuse == "Multifamily"]   / mf_du_per
+
+checks_DU$Density[checks_DU$Landuse == "Single-family"] <- checks_DU$Dwelling_Units[checks_DU$Landuse == "Single-family"] / (checks_DU$Land_Area / 43560)
+checks_DU$Density[checks_DU$Landuse == "Multifamily"]   <- checks_DU$Dwelling_Units[checks_DU$Landuse == "Multifamily"]   / (checks_DU$Land_Area / 43560)
+
+
+checks_DU %>%
+  kable() %>%
+  kable_material(c("striped", "hover")) %>%
+  scroll_box(height = "300px")
+```
+
+# CHATZ Data
+
+```{r, out.width="100%"}
+taz <-st_join(taz, segments, join = st_intersects, left = FALSE) %>% 
+  group_by(SegmentNm) %>% 
+  summarise(`Total Employment` = sum(TOTEMP20),
+            `Total Households` = sum(HHs))
+
+checks <- checks %>% 
+  group_by(seg_nam) %>% 
+  summarise(`Est_Tot_Employment` = sum(Employees))
+
+checks_DU2 <- checks_DU %>% 
+  group_by(seg_nam) %>% 
+  summarise(Est_Tot_Dwellings = sum(Dwelling_Units))
+
+estimates <- left_join(checks, checks_DU2)
+
+m_order <- c("SegmentNm", "Est_Tot_Employment", "Total Employment", "Est_Tot_Dwellings",
+             "Total Households")
+taz <- st_drop_geometry(taz) %>% left_join(estimates, by = c("SegmentNm" = "seg_nam"))
+
+taz[m_order] %>%
+  kable() %>% 
+  kable_material(c("striped", "hover")) %>%
+  scroll_box(height = "300px")
+
+```
+
+# Housing Density by Segment
+
+```{r, out.width="100%"}
+ggplot(checks_DU) +
+  geom_col(aes(x = seg_nam, y = Density, fill = Landuse)) +
+  labs(y = "Units Per Acre", x = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+# FAR by Segment 
+## {.tabset} 
+### Historic Penisula
+```{r, out.width="100%"}
+ggplot(data = st_drop_geometry(final_parcels) %>%
+         filter(seg_nam == "Historic Peninsula") %>%
+         filter(Landuse != "Multifamily") %>% 
+         filter(Landuse != "Single-family")  %>%
+         transmute(Landuse = Landuse,
+                   FAR = BldSqFt / Sq_Feet) 
+) +
+  geom_histogram(aes(x = FAR), fill = "#000000", binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = "Non Residential Land Uses") +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[1])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[1], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[1])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[2])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[2], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[2])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[3])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[3], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[3])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[4])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[4], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[4])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[5])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[5], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[5])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[6])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[6], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[6])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[7])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[7], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[7])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[8])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[8], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[8])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[9])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[9], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[9])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[10])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[10], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[10])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[11])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[11], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[11])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Historic Peninsula") %>%
+        filter(Landuse == landuses[12])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[12], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[12])) +
+  theme(legend.position =  "none")
+```
+
+### The Neck
+```{r, out.width="100%"}
+ggplot(data = st_drop_geometry(final_parcels) %>%
+         filter(seg_nam == "The Neck") %>%
+         filter(Landuse != "Multifamily") %>% 
+         filter(Landuse != "Single-family")  %>%
+         transmute(Landuse = Landuse,
+                   FAR = BldSqFt / Sq_Feet) 
+) +
+  geom_histogram(aes(x = FAR), fill = "#000000", binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = "Non Residential Land Uses") +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[1])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[1], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[1])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[2])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[2], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[2])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[3])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[3], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[3])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[4])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[4], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[4])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[5])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[5], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[5])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[6])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[6], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[6])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[7])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[7], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[7])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[8])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[8], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[8])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[9])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[9], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[9])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[10])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[10], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[10])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[11])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[11], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[11])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "The Neck") %>%
+        filter(Landuse == landuses[12])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[12], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[12])) +
+  theme(legend.position =  "none")
+```
+
+### South End
+```{r, out.width="100%"}
+ggplot(data = st_drop_geometry(final_parcels) %>%
+         filter(seg_nam == "South End") %>%
+         filter(Landuse != "Multifamily") %>% 
+         filter(Landuse != "Single-family")  %>%
+         transmute(Landuse = Landuse,
+                   FAR = BldSqFt / Sq_Feet) 
+) +
+  geom_histogram(aes(x = FAR), fill = "#000000", binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = "Non Residential Land Uses") +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[1])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[1], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[1])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[2])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[2], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[2])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[3])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[3], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[3])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[4])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[4], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[4])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[5])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[5], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[5])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[6])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[6], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[6])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[7])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[7], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[7])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[8])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[8], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[8])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[9])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[9], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[9])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[10])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[10], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[10])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[11])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[11], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[11])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "South End") %>%
+        filter(Landuse == landuses[12])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[12], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[12])) +
+  theme(legend.position =  "none")
+```
+
+### I-526 Employment
+```{r, out.width="100%"}
+ggplot(data = st_drop_geometry(final_parcels) %>%
+         filter(seg_nam == "I-536 Employment") %>%
+         filter(Landuse != "Multifamily") %>% 
+         filter(Landuse != "Single-family")  %>%
+         transmute(Landuse = Landuse,
+                   FAR = BldSqFt / Sq_Feet) 
+) +
+  geom_histogram(aes(x = FAR), fill = "#000000", binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = "Non Residential Land Uses") +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[1])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[1], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[1])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[2])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[2], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[2])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[3])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[3], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[3])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[4])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[4], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[4])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[5])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[5], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[5])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[6])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[6], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[6])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[7])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[7], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[7])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[8])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[8], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[8])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[9])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[9], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[9])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[10])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[10], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[10])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[11])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[11], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[11])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "I-536 Employment") %>%
+        filter(Landuse == landuses[12])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[12], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[12])) +
+  theme(legend.position =  "none")
+```
+
+### Northwoods Mall
+```{r, out.width="100%"}
+ggplot(data = st_drop_geometry(final_parcels) %>%
+         filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+         filter(Landuse != "Multifamily") %>% 
+         filter(Landuse != "Single-family")  %>%
+         transmute(Landuse = Landuse,
+                   FAR = BldSqFt / Sq_Feet) 
+) +
+  geom_histogram(aes(x = FAR), fill = "#000000", binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = "Non Residential Land Uses") +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[1])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[1], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[1])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[2])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[2], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[2])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[3])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[3], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[3])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[4])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[4], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[4])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[5])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[5], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[5])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[6])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[6], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[6])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[7])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[7], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[7])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[8])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[8], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[8])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[9])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[9], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[9])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[10])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[10], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[10])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[11])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[11], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[11])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Northwoods Mall Rivers Ave") %>%
+        filter(Landuse == landuses[12])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[12], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[12])) +
+  theme(legend.position =  "none")
+```
+
+### US 78
+```{r, out.width="100%"}
+ggplot(data = st_drop_geometry(final_parcels) %>%
+         filter(seg_nam == "US 78") %>%
+         filter(Landuse != "Multifamily") %>% 
+         filter(Landuse != "Single-family")  %>%
+         transmute(Landuse = Landuse,
+                   FAR = BldSqFt / Sq_Feet) 
+) +
+  geom_histogram(aes(x = FAR), fill = "#000000", binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = "Non Residential Land Uses") +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[1])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[1], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[1])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[2])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[2], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[2])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[3])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[3], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[3])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[4])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[4], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[4])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[5])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[5], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[5])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[6])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[6], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[6])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[7])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[7], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[7])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[8])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[8], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[8])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[9])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[9], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[9])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[10])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[10], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[10])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[11])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[11], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[11])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "US 78") %>%
+        filter(Landuse == landuses[12])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[12], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[12])) +
+  theme(legend.position =  "none")
+```
+
+### Summerville
+```{r, out.width="100%"}
+ggplot(data = st_drop_geometry(final_parcels) %>%
+         filter(seg_nam == "Summerville") %>%
+         filter(Landuse != "Multifamily") %>% 
+         filter(Landuse != "Single-family")  %>%
+         transmute(Landuse = Landuse,
+                   FAR = BldSqFt / Sq_Feet) 
+) +
+  geom_histogram(aes(x = FAR), fill = "#000000", binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = "Non Residential Land Uses") +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[1])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[1], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[1])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[2])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[2], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[2])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[3])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[3], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[3])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[4])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[4], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[4])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[5])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[5], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[5])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[6])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[6], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[6])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[7])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[7], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[7])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[8])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[8], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[8])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[9])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[9], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[9])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[10])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[10], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[10])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[11])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[11], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[11])) +
+  theme(legend.position =  "none")
+
+ggplot(data = st_drop_geometry(final_parcels) %>%
+        filter(seg_nam == "Summerville") %>%
+        filter(Landuse == landuses[12])  %>%
+        transmute(Landuse = Landuse,
+                  FAR = BldSqFt / Sq_Feet) 
+      ) +
+  geom_histogram(aes(x = FAR), fill = my_pal[12], binwidth = .1) +
+  labs(x = "FAR", y = "Count", title = paste0(landuses[12])) +
+  theme(legend.position =  "none")
+```

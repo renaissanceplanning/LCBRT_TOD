@@ -280,7 +280,7 @@ def makeTargetFieldsDict(tgt_fields):
 
 # %% INPUT DATA SETS
 # Parcels
-parcels = "parcels"
+parcels = "parcels_bldSqft_update_1202"
 parcels = path.join(source_gdb, parcels)
 id_field = "ParclID"
 current_lu_field = "LandUse2"  # Copy of `LandUse` but classed as "vacant/undeveloped" where bldgsqft=0 and LU would suggest a building is present
