@@ -19,21 +19,7 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="update gitignore">
-      <change afterPath="$PROJECT_DIR$/R/Allocation_Work_Around.R" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/R/BuildingUpdates_1201.R" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/R/BuildingUpdates_1202.R" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/R/Parcels_Capasity_Updates_1201.R" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/R/Parcels_Capasity_Updates_1202.R" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/R/checks_bld_height.Rmd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/R/checks_bld_height.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/scripts.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/scripts.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/R/Parcels_Capasity_Updates_11-03.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/generate_scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/generate_scenarios.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/summarize_stationAreas.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/summarize_stationAreas.py" afterDir="false" />
-    </list>
+    <list default="true" id="dd78cf3f-bb67-47c7-b068-e592029e2c5b" name="Default Changelist" comment="update gitignore" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -261,6 +247,7 @@
       <workItem from="1606943950689" duration="786000" />
       <workItem from="1611947981104" duration="166000" />
       <workItem from="1612194067822" duration="119000" />
+      <workItem from="1612195436656" duration="15000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <created>1599071890935</created>
